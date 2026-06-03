@@ -1,25 +1,167 @@
 import { useState, useRef, ChangeEvent } from 'react';
-import { Plus, Trash2, LayoutGrid, List, MapPin, Hash, Calculator, X, Save, Layers, Download, Upload, AlertCircle, Building2, Calendar, Search, ChevronDown, ChevronRight, FolderMinus, FolderPlus, Edit2 } from 'lucide-react';
+import { Plus, Trash2, LayoutGrid, List, MapPin, Hash, Calculator, X, Save, Layers, Download, Upload, AlertCircle, Building2, Calendar, Search, ChevronDown, ChevronRight, FolderMinus, FolderPlus, Edit2, Cloud, RefreshCw } from 'lucide-react';
 import { Project, ProjectRequirement, Craft, ProjectPhase } from '../types';
 import { cn } from '../lib/utils';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { formatToExcelDate, parseExcelDate } from '../lib/dateUtils';
 import { DEFAULT_CRAFTS } from '../lib/constants';
+import { listDriveFiles, downloadFileFromDrive, uploadCustomFileToDrive } from '../lib/googleDriveService';
+import { User as FirebaseUser } from 'firebase/auth';
 
 interface Props {
   projects: Project[];
   setProjects: (p: Project[]) => void;
   isAdding?: boolean;
   onCloseAdd?: () => void;
+  googleUser?: FirebaseUser | null;
+  onGoogleConnect?: () => Promise<void>;
 }
 
 
-export default function ProjectManagement({ projects, setProjects, isAdding, onCloseAdd }: Props) {
+export default function ProjectManagement({ projects, setProjects, isAdding, onCloseAdd, googleUser, onGoogleConnect }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<string | null>(null);
   const [confirmDeleteReqId, setConfirmDeleteReqId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Google Drive state hooks
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+  const [driveFiles, setDriveFiles] = useState<any[]>([]);
+  const [isFetchLoading, setIsFetchLoading] = useState(false);
+  const [driveSearchQuery, setDriveSearchQuery] = useState('');
+  const [selectedDriveFileId, setSelectedDriveFileId] = useState<string | null>(null);
+  const [isImportLoading, setIsImportLoading] = useState(false);
+
+  const handleOpenDriveImport = async () => {
+    setIsDriveModalOpen(true);
+    if (googleUser) {
+      await fetchDriveFiles();
+    }
+  };
+
+  const fetchDriveFiles = async () => {
+    setIsFetchLoading(true);
+    try {
+      const files = await listDriveFiles();
+      setDriveFiles(files);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Google Drive error: ${err.message || err}`);
+    } finally {
+      setIsFetchLoading(false);
+    }
+  };
+
+  const handleImportFromSelectedDriveFile = async (fileId: string, fileName: string) => {
+    setIsImportLoading(true);
+    try {
+      const buffer = await downloadFileFromDrive(fileId);
+      
+      if (fileName.toLowerCase().endsWith('.json')) {
+        // Handle parsing of JSON file backup
+        const textDecoder = new TextDecoder('utf-8');
+        const contents = textDecoder.decode(buffer);
+        const parsed = JSON.parse(contents);
+        
+        let importedProjects: Project[] = [];
+        if (parsed.projects && Array.isArray(parsed.projects)) {
+          importedProjects = parsed.projects;
+        } else if (Array.isArray(parsed)) {
+          importedProjects = parsed;
+        } else {
+          throw new Error("No projects database array found. Verify the backup scheme.");
+        }
+        
+        if (importedProjects.length === 0) {
+          alert('Import warning: Selected JSON file has no project records inside.');
+          return;
+        }
+
+        // Merge: overwrite existing projects by code
+        const map = new Map(projects.map(p => [p.code.toUpperCase().trim(), p]));
+        importedProjects.forEach(item => {
+          if (item.name && item.code) {
+            map.set(item.code.toUpperCase().trim(), {
+              ...item,
+              id: item.id || `P-${item.code.toUpperCase().trim()}`,
+              requirements: item.requirements || []
+            });
+          }
+        });
+        setProjects(Array.from(map.values()));
+        alert(`Successfully imported/restored ${importedProjects.length} projects from Google Drive backup.`);
+        setIsDriveModalOpen(false);
+
+      } else {
+        // Handle sheet array buffer
+        const dataArr = new Uint8Array(buffer);
+        const wb = XLSX.read(dataArr, { type: 'array' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        const projectMap: Record<string, Project> = {};
+
+        data.forEach((row: any) => {
+          const rawCode = String(row['Project Code'] || row['code'] || '').trim();
+          const cleanCodeToken = rawCode.toUpperCase();
+          const name = row['Project Title'] || row['name'] || '';
+          if (!rawCode || !name) return;
+
+          if (!projectMap[cleanCodeToken]) {
+            projectMap[cleanCodeToken] = {
+              id: `P-${cleanCodeToken}`,
+              name: name,
+              code: rawCode,
+              location: row['Location'] || row['location'] || 'Main Site',
+              department: row['Department'] || row['department'] || '',
+              startDate: parseExcelDate(row['Start Date'] || row['startDate']) || dayjs().format('YYYY-MM-DD'),
+              endDate: parseExcelDate(row['Finish Date'] || row['endDate']) || dayjs().add(6, 'month').format('YYYY-MM-DD'),
+              requirements: []
+            };
+          }
+
+          const rawCraft = row['Required Craft'] || row['craft'];
+          const rawQty = row['Required Qty'] || row['qty'];
+          const qty = parseInt(String(rawQty || 0));
+          
+          if (rawCraft && rawCraft !== '--') {
+            const reqStart = parseExcelDate(row['Requirement Start'] || row['requirementStart']) || projectMap[cleanCodeToken].startDate;
+            const reqEnd = parseExcelDate(row['Requirement End'] || row['requirementEnd']) || projectMap[cleanCodeToken].endDate;
+            projectMap[cleanCodeToken].requirements.push({
+              id: `REQ-${Date.now()}-${Math.random().toString(16).substring(2, 10)}`,
+              craft: String(rawCraft),
+              phase: (row['Phase'] || row['phase'] || 'TA') as ProjectPhase,
+              qty: qty,
+              startDate: reqStart,
+              endDate: reqEnd,
+            });
+          }
+        });
+
+        const imported = Object.values(projectMap);
+
+        if (imported.length === 0) {
+          alert('No valid project records found in Excel. Verify columns "Project Title", "Project Code".');
+          return;
+        }
+
+        const map = new Map(projects.map(p => [p.code.toUpperCase().trim(), p]));
+        imported.forEach(item => {
+          map.set(item.code.toUpperCase().trim(), item);
+        });
+        setProjects(Array.from(map.values()));
+        alert(`Successfully imported/synchronized ${imported.length} projects from Google Drive file: ${fileName}`);
+        setIsDriveModalOpen(false);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(`Could not import selected Google Drive file: ${err.message || err}`);
+    } finally {
+      setIsImportLoading(false);
+    }
+  };
   
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
@@ -160,6 +302,58 @@ export default function ProjectManagement({ projects, setProjects, isAdding, onC
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Projects");
     XLSX.writeFile(wb, `Kanooz_Projects_Requirements_${formatToExcelDate(new Date())}.xlsx`);
+  };
+
+  const handleExportToDrive = async () => {
+    if (!googleUser) {
+      alert("Please connect Google Drive first (available in the import modal or Reports tab) to export.");
+      setIsDriveModalOpen(true);
+      return;
+    }
+
+    const flatProjects = projects.flatMap(p => 
+      p.requirements.length > 0 ? p.requirements.map(r => ({
+        'Project Title': p.name,
+        'Project Code': p.code,
+        'Location': p.location,
+        'Department': p.department,
+        'Start Date': formatToExcelDate(p.startDate),
+        'Finish Date': formatToExcelDate(p.endDate),
+        'Required Craft': r.craft,
+        'Phase': r.phase,
+        'Required Qty': r.qty,
+        'Requirement Start': formatToExcelDate(r.startDate),
+        'Requirement End': formatToExcelDate(r.endDate)
+      })) : [{
+        'Project Title': p.name,
+        'Project Code': p.code,
+        'Location': p.location,
+        'Department': p.department,
+        'Start Date': formatToExcelDate(p.startDate),
+        'Finish Date': formatToExcelDate(p.endDate),
+        'Required Craft': '--',
+        'Phase': '--',
+        'Required Qty': 0,
+        'Requirement Start': '--',
+        'Requirement End': '--'
+      }]
+    );
+    const ws = XLSX.utils.json_to_sheet(flatProjects);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Projects");
+
+    try {
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const fileName = `Kanooz_Projects_Requirements_${formatToExcelDate(new Date())}.xlsx`;
+      const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+      const fileBuffer = new Uint8Array(wbout);
+      const result = await uploadCustomFileToDrive(fileName, fileBuffer, mimeType);
+      alert(`🎉 Exported successfully to Google Drive!\nFile saved as: ${result.name}`);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Could not export to Google Drive: ${err.message || err}`);
+    }
   };
 
   const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
@@ -406,11 +600,25 @@ export default function ProjectManagement({ projects, setProjects, isAdding, onC
             Import Excel
           </button>
           <button 
+            onClick={handleOpenDriveImport}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-indigo-700 border border-indigo-100 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+          >
+            <Cloud className="w-3.5 h-3.5" />
+            Import from Drive
+          </button>
+          <button 
             onClick={handleExport}
             className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#666] border border-[#E5E5E5] rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
             Export Excel
+          </button>
+          <button 
+            onClick={handleExportToDrive}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#666] border border-[#E5E5E5] rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Cloud className="w-3.5 h-3.5" />
+            Export to Drive
           </button>
         </div>
       </div>
@@ -794,6 +1002,172 @@ export default function ProjectManagement({ projects, setProjects, isAdding, onC
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Google Drive Import Modal */}
+      {isDriveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200 no-print">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-lg mx-4 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200 text-left">
+            <div className="flex items-center justify-between border-b pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-base font-bold text-gray-900">Import Projects from Google Drive</h3>
+              </div>
+              <button 
+                onClick={() => setIsDriveModalOpen(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {!googleUser ? (
+              <div className="py-8 text-center space-y-4">
+                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full w-fit mx-auto">
+                  <Cloud className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-slate-800">Google Drive Connection Required</h4>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-normal">
+                    Please connect your Google Drive account first to securely search and import project requirements or backup packs.
+                  </p>
+                </div>
+                
+                <button
+                  onClick={onGoogleConnect}
+                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-md transition-colors cursor-pointer"
+                >
+                  <span>Connect Google Drive</span>
+                </button>
+
+                <p className="text-[10px] text-slate-500 font-medium text-center bg-amber-50 rounded-lg p-2.5 border border-amber-100 leading-normal max-w-xs mx-auto">
+                  💡 <b>Iframe Warning:</b> If you get a popup error, click "New Tab  ↗" in the sidebar/Reports tab to establish initial credentials.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* File search/list view */}
+                <div className="mb-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input 
+                      type="text"
+                      placeholder="Search spreadsheets / backups in Drive..."
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-150"
+                      value={driveSearchQuery}
+                      onChange={e => setDriveSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[250px] max-h-[400px]">
+                  {isFetchLoading ? (
+                    <div className="py-20 text-center text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
+                      <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
+                      <span>Scanning Google Drive files...</span>
+                    </div>
+                  ) : driveFiles.length === 0 ? (
+                    <div className="py-20 text-center text-slate-400 text-xs">
+                      No spreadsheets (.xlsx/.xls) or backup files found in Drive.
+                      <button 
+                        onClick={fetchDriveFiles} 
+                        className="block mx-auto mt-2 text-indigo-650 hover:underline font-bold"
+                      >
+                        Reload List
+                      </button>
+                    </div>
+                  ) : (
+                    (() => {
+                      const filteredFiles = driveFiles.filter(f => 
+                        f.name.toLowerCase().includes(driveSearchQuery.toLowerCase())
+                      );
+                      
+                      if (filteredFiles.length === 0) {
+                        return <p className="text-center text-slate-400 text-xs py-10">No matching files found.</p>;
+                      }
+
+                      return filteredFiles.map(file => {
+                        const isSelected = selectedDriveFileId === file.id;
+                        const isJson = file.name.endsWith('.json');
+                        return (
+                          <div 
+                            key={file.id}
+                            onClick={() => !isImportLoading && setSelectedDriveFileId(file.id)}
+                            className={cn(
+                              "p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left",
+                              isSelected 
+                                ? "border-indigo-500 bg-indigo-50/40 shadow-xs" 
+                                : "border-slate-100 hover:bg-slate-50"
+                            )}
+                          >
+                            <div className="flex items-center gap-3 truncate">
+                              <div className={cn(
+                                "p-2 rounded-lg text-xs font-bold shrink-0",
+                                isJson ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+                              )}>
+                                {isJson ? 'JSON' : 'XLSX'}
+                              </div>
+                              <div className="truncate">
+                                <p className="text-xs font-bold text-slate-850 truncate">{file.name}</p>
+                                <p className="text-[9px] text-slate-500">
+                                  Modified: {file.modifiedTime ? dayjs(file.modifiedTime).format('DD MMM YYYY, hh:mm A') : 'Unknown'}
+                                </p>
+                              </div>
+                            </div>
+                            <input 
+                              type="radio"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="accent-indigo-600 shrink-0"
+                            />
+                          </div>
+                        );
+                      });
+                    })()
+                  )}
+                </div>
+
+                <div className="border-t pt-4 mt-4 flex items-center justify-between">
+                  <button
+                    onClick={fetchDriveFiles}
+                    disabled={isFetchLoading || isImportLoading}
+                    className="text-xs font-bold text-slate-650 hover:text-indigo-650 p-2 rounded-lg hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RefreshCw className={cn("w-3.5 h-3.5", isFetchLoading && "animate-spin")} />
+                    Reload
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsDriveModalOpen(false)}
+                      disabled={isImportLoading}
+                      className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        const file = driveFiles.find(f => f.id === selectedDriveFileId);
+                        if (file) handleImportFromSelectedDriveFile(file.id, file.name);
+                      }}
+                      disabled={!selectedDriveFileId || isImportLoading}
+                      className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {isImportLoading ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          Importing...
+                        </>
+                      ) : (
+                        'Load & Import'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

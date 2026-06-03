@@ -33,6 +33,16 @@ import { runAutoAssignment, calculateShortages } from './lib/assignment-engine';
 import { cn } from './lib/utils';
 import { formatToExcelDate, parseExcelDate } from './lib/dateUtils';
 
+// Google Drive Sync Service
+import { 
+  initAuth as initGoogleAuth, 
+  googleSignIn, 
+  logout as googleLogout, 
+  saveToDrive, 
+  loadFromDrive 
+} from './lib/googleDriveService';
+import { User as FirebaseUser } from 'firebase/auth';
+
 // Sub-components (to be extracted or kept inline if small)
 import Dashboard from './components/Dashboard';
 import ManpowerPool from './components/ManpowerPool';
@@ -68,6 +78,29 @@ export default function App() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [currentPasswordConfirm, setCurrentPasswordConfirm] = useState('');
+
+  // Google Drive Cloud Sync States
+  const [googleUser, setGoogleUser] = useState<FirebaseUser | null>(null);
+  const [googleToken, setGoogleToken] = useState<string | null>(null);
+  const [isDriveSyncing, setIsDriveSyncing] = useState(false);
+  const [driveSyncMessage, setDriveSyncMessage] = useState<string | null>(null);
+
+  // Initialize Google Auth state listener
+  useEffect(() => {
+    const unsubscribe = initGoogleAuth(
+      (user, token) => {
+        setGoogleUser(user);
+        setGoogleToken(token);
+      },
+      () => {
+        setGoogleUser(null);
+        setGoogleToken(null);
+      }
+    );
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   // Force Light Theme (Dark Mode Disabled Throughout)
   useEffect(() => {
@@ -220,6 +253,145 @@ export default function App() {
     };
     reader.readAsText(file);
     e.target.value = ''; // Reset the input file path
+  };
+
+  const handleGoogleConnect = async () => {
+    setIsDriveSyncing(true);
+    setDriveSyncMessage('Connecting to Google...');
+    try {
+      const result = await googleSignIn();
+      if (result) {
+        setGoogleUser(result.user);
+        setGoogleToken(result.accessToken);
+        setDriveSyncMessage('Successfully connected to Google Drive!');
+      }
+    } catch (err: any) {
+      console.error(err);
+      const isPopupError = err.code === 'auth/popup-closed-by-user' || 
+                           (err.message && err.message.includes('popup-closed-by-user'));
+      
+      if (isPopupError) {
+        alert(
+          "⚠️ Google Auth Popup Blocked or Closed\n\n" +
+          "This error occurs when standard login popups are restricted or blocked inside the sandboxed preview iframe of Google AI Studio.\n\n" +
+          "To fix this, please click 'New Tab ↗' under the Connect Google Drive button (or open the app link directly) to log in. Standalone windows have no sandbox limitations and the popup will work perfectly!"
+        );
+        setDriveSyncMessage('Popup blocked. Please login in a New Tab.');
+      } else {
+        alert(`Google Connection Failed: ${err.message || 'Check your internet connection or browser settings.'}`);
+        setDriveSyncMessage(null);
+      }
+    } finally {
+      setIsDriveSyncing(false);
+    }
+  };
+
+  const handleGoogleDisconnect = async () => {
+    if (window.confirm('Are you sure you want to disconnect your Google Drive? Your local data will remain safe.')) {
+      setIsDriveSyncing(true);
+      try {
+        await googleLogout();
+        setGoogleUser(null);
+        setGoogleToken(null);
+        setDriveSyncMessage('Signed out from Google.');
+        setTimeout(() => setDriveSyncMessage(null), 3000);
+      } catch (err: any) {
+        console.error(err);
+        alert(`Disconnection Error: ${err.message}`);
+      } finally {
+        setIsDriveSyncing(false);
+      }
+    }
+  };
+
+  const handleBackupToDrive = async () => {
+    if (!googleUser) {
+      alert('Connection error: Google Drive is not paired. Please connect your Drive first.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to backup your active database to Google Drive?\n\nThis will write "Kanooz_Master_Planning_Backup.json" directly onto your connected Google Drive storage. Overwriting any previous backend backups.'
+    );
+    if (!confirmed) return;
+
+    setIsDriveSyncing(true);
+    setDriveSyncMessage('Uploading backup pack to Google Drive...');
+    try {
+      const payload = {
+        manpower,
+        projects,
+        assignments,
+        backupDate: dayjs().format('YYYY-MM-DD'),
+        creator: 'Kanooz Central Planning'
+      };
+      
+      const result = await saveToDrive(payload);
+      
+      setDriveSyncMessage(
+        result.updated 
+          ? 'Backup successfully updated on Google Drive!' 
+          : 'New backup package registered on Google Drive!'
+      );
+      
+      alert(
+        `Cloud Synchronize Successful!\n\n${
+          result.updated 
+            ? 'Your online Google Drive file has been updated successfully.' 
+            : 'A new file "Kanooz_Master_Planning_Backup.json" was successfully created on your Google Drive.'
+        }`
+      );
+    } catch (err: any) {
+      console.error(err);
+      alert(`Google Drive Upload failed: ${err.message || err}`);
+      setDriveSyncMessage('Upload failed. Try again.');
+    } finally {
+      setIsDriveSyncing(false);
+      setTimeout(() => setDriveSyncMessage(null), 5000);
+    }
+  };
+
+  const handleRestoreFromDrive = async () => {
+    if (!googleUser) {
+      alert('Connection error: Google Drive is not paired. Please connect your Drive first.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to restore data from Google Drive?\n\nThis will download your cloud master backup file "Kanooz_Master_Planning_Backup.json" and completely replace your current local manpower pool, projects list, and confirmed assignments. Local data will be overwritten!'
+    );
+    if (!confirmed) return;
+
+    setIsDriveSyncing(true);
+    setDriveSyncMessage('Retrieving database from Google Drive...');
+    try {
+      const parsed = await loadFromDrive();
+      if (!parsed) {
+        alert('Could not find any file named "Kanooz_Master_Planning_Backup.json" on your Google Drive. Make a backup first.');
+        setDriveSyncMessage('No backup file found on Google Drive.');
+        return;
+      }
+
+      if (!parsed.manpower || !parsed.projects || !parsed.assignments) {
+        alert('Validation error: The backup file on your Google Drive doesn\'t match the required database schema standards.');
+        setDriveSyncMessage('Invalid file schema.');
+        return;
+      }
+
+      setManpower(parsed.manpower);
+      setProjects(parsed.projects);
+      setAssignments(parsed.assignments);
+      
+      setDriveSyncMessage('Database restored successfully!');
+      alert(`Success!\n\nDatabase fully synchronized. Loaded ${parsed.manpower.length} workers, ${parsed.projects.length} projects, and ${parsed.assignments.length} assignments directly from your cloud storage.`);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Google Drive Retrieve failed: ${err.message || err}`);
+      setDriveSyncMessage('Retrieve failed.');
+    } finally {
+      setIsDriveSyncing(false);
+      setTimeout(() => setDriveSyncMessage(null), 5000);
+    }
   };
 
   const handleAutoAssign = () => {
@@ -547,6 +719,8 @@ export default function App() {
                     setManpower={setManpower} 
                     isAdding={isAddingManpower} 
                     onCloseAdd={() => setIsAddingManpower(false)} 
+                    googleUser={googleUser}
+                    onGoogleConnect={handleGoogleConnect}
                   />
                 )}
                 {activeTab === Tab.PROJECTS && (
@@ -555,6 +729,8 @@ export default function App() {
                     setProjects={setProjects} 
                     isAdding={isAddingProject}
                     onCloseAdd={() => setIsAddingProject(false)}
+                    googleUser={googleUser}
+                    onGoogleConnect={handleGoogleConnect}
                   />
                 )}
                 {activeTab === Tab.ASSIGNMENTS && (
@@ -620,6 +796,87 @@ export default function App() {
                             className="hidden" 
                           />
                         </label>
+
+                        <div className="relative flex py-2 items-center">
+                          <div className="flex-grow border-t border-slate-150"></div>
+                          <span className="flex-shrink mx-2 text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Google Drive Cloud Sync</span>
+                          <div className="flex-grow border-t border-slate-150"></div>
+                        </div>
+
+                        {googleUser ? (
+                          <div className="space-y-2.5 p-3.5 bg-indigo-50/30 rounded-xl border border-indigo-100 text-left">
+                            <div className="flex items-center justify-between text-[11px] text-slate-600">
+                              <span className="truncate max-w-[170px]">User: <b className="text-slate-900">{googleUser.email || googleUser.displayName}</b></span>
+                              <button 
+                                onClick={handleGoogleDisconnect}
+                                className="text-rose-600 hover:text-rose-700 font-extrabold shrink-0 text-[10px] uppercase tracking-wider"
+                              >
+                                Disconnect
+                              </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2">
+                              <button 
+                                onClick={handleBackupToDrive}
+                                disabled={isDriveSyncing}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-bold transition-all text-[11px] inline-flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 shrink-0 cursor-pointer"
+                              >
+                                Upload to Google Drive
+                              </button>
+                              
+                              <button 
+                                onClick={handleRestoreFromDrive}
+                                disabled={isDriveSyncing}
+                                className="bg-white border border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50/20 text-indigo-700 py-2 rounded-lg font-bold transition-all text-[11px] inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shrink-0 cursor-pointer"
+                              >
+                                Restore from Google Drive
+                              </button>
+                            </div>
+
+                            {driveSyncMessage && (
+                              <p className="text-[10px] text-indigo-650 font-medium italic text-center mt-1 animate-pulse">
+                                {driveSyncMessage}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <button 
+                              onClick={handleGoogleConnect}
+                              disabled={isDriveSyncing}
+                              className="w-full flex items-center justify-center bg-white hover:bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 shadow-2xs cursor-pointer text-xs font-bold text-slate-700 transition-colors disabled:opacity-50"
+                            >
+                              <div className="flex items-center gap-2">
+                                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-4 h-4 shrink-0">
+                                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                                </svg>
+                                <span>Connect Google Drive</span>
+                              </div>
+                            </button>
+                            
+                            <p className="text-[10px] text-slate-500 font-medium text-center bg-amber-50 rounded-lg p-2.5 border border-amber-100 leading-normal">
+                              💡 <b>Iframe Preview Warning:</b> Google security restricts login popups inside sandboxed frames. Please open the portal in a 
+                              <a 
+                                href={window.location.href} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-indigo-650 font-bold hover:underline ml-1 inline-flex items-center gap-0.5"
+                              >
+                                New Tab ↗
+                              </a> 
+                              first to connect successfully.
+                            </p>
+
+                            {driveSyncMessage && (
+                              <p className="text-[10px] text-indigo-600 italic text-center animate-pulse">
+                                {driveSyncMessage}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
