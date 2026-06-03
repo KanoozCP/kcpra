@@ -350,17 +350,56 @@ export default function App() {
       }
       return;
     }
+
+    let parsed: any = null;
+
+    // 1. Try standard JSON parsing
     try {
-      const parsed = JSON.parse(customConfigStr);
-      if (!parsed.apiKey || !parsed.authDomain || !parsed.projectId) {
-        alert('Error: The pasted JSON must be a valid Firebase configuration object. It must contain at least "apiKey", "authDomain", and "projectId".');
-        return;
+      parsed = JSON.parse(customConfigStr);
+    } catch (e) {
+      // 2. If JSON fails, extract using regex to support JS object copy-pasting
+      const input = customConfigStr;
+      const extractField = (field: string, text: string): string | null => {
+        const regex = new RegExp(`['"]?${field}['"]?\\s*:\\s*['"]([^'"]+)['"]`);
+        const match = text.match(regex);
+        return match ? match[1] : null;
+      };
+
+      const apiKey = extractField('apiKey', input);
+      const authDomain = extractField('authDomain', input);
+      const projectId = extractField('projectId', input);
+      const storageBucket = extractField('storageBucket', input);
+      const messagingSenderId = extractField('messagingSenderId', input);
+      const appId = extractField('appId', input);
+      const measurementId = extractField('measurementId', input);
+
+      if (apiKey && authDomain && projectId) {
+        parsed = {
+          apiKey,
+          authDomain,
+          projectId,
+          ...(storageBucket ? { storageBucket } : {}),
+          ...(messagingSenderId ? { messagingSenderId } : {}),
+          ...(appId ? { appId } : {}),
+          ...(measurementId ? { measurementId } : {})
+        };
       }
+    }
+
+    if (parsed && parsed.apiKey && parsed.authDomain && parsed.projectId) {
       localStorage.setItem('kanooz_custom_firebase_config', JSON.stringify(parsed, null, 2));
-      alert('🎉 Success! Custom Firebase credentials applied.\\n\\nThe page will now reload to initialize your Firebase project.');
+      alert('🎉 Success! Custom Firebase credentials applied.\n\nThe page will now reload to initialize your Firebase project.');
       window.location.reload();
-    } catch (err: any) {
-      alert('Error parsing JSON content. Please make sure you copied the correct JSON configuration directly from Firebase Console (Web App settings setup) and that it is fully valid.');
+    } else {
+      alert(
+        'Could not parse the configurations. Please copy and paste the entire config block from the Firebase console!\n\n' +
+        'It should look like this (you can paste the whole block directly):\n' +
+        'const firebaseConfig = {\n' +
+        '  apiKey: "...",\n' +
+        '  authDomain: "...",\n' +
+        '  projectId: "..."\n' +
+        '};'
+      );
     }
   };
 
