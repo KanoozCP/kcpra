@@ -269,8 +269,24 @@ export default function App() {
       console.error(err);
       const isPopupError = err.code === 'auth/popup-closed-by-user' || 
                            (err.message && err.message.includes('popup-closed-by-user'));
+      const isDomainError = err.code === 'auth/unauthorized-domain' || 
+                            (err.message && err.message.includes('unauthorized-domain'));
       
-      if (isPopupError) {
+      if (isDomainError) {
+        const currentDomain = window.location.hostname;
+        alert(
+          "🔒 Google Auth: Unauthorized Client Domain!\n\n" +
+          "Firebase Authentication requires this domain to be authorized under your project's settings before launching sign-in popups.\n\n" +
+          "To fix this, please follow these simple steps:\n" +
+          "1. Open your Firebase Console settings page:\n" +
+          "   https://console.firebase.google.com/project/spiritual-amplifier-307pf/authentication/settings\n\n" +
+          "2. Find the 'Authorized domains' card, click 'Add domain' or 'Add authorized domain'.\n\n" +
+          "3. Copy and paste your current environment domain:\n" +
+          `   👉 ${currentDomain}\n\n` +
+          "Once registered, refresh the page and try connecting again!"
+        );
+        setDriveSyncMessage(`Unauthorized domain. Please authorize: ${currentDomain}`);
+      } else if (isPopupError) {
         alert(
           "⚠️ Google Auth Popup Blocked or Closed\n\n" +
           "This error occurs when standard login popups are restricted or blocked inside the sandboxed preview iframe of Google AI Studio.\n\n" +
