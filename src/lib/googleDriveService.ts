@@ -6,7 +6,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
-provider.addScope('https://www.googleapis.com/auth/drive.file');
+provider.addScope('https://www.googleapis.com/auth/drive');
 
 let isSigningIn = false;
 let cachedAccessToken: string | null = localStorage.getItem('kanooz_google_drive_token');
