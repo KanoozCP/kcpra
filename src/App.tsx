@@ -22,7 +22,9 @@ import {
   Upload,
   Printer,
   Moon,
-  Sun
+  Sun,
+  Sliders,
+  Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import dayjs from 'dayjs';
@@ -39,7 +41,8 @@ import {
   googleSignIn, 
   logout as googleLogout, 
   saveToDrive, 
-  loadFromDrive 
+  loadFromDrive,
+  auth
 } from './lib/googleDriveService';
 import { User as FirebaseUser } from 'firebase/auth';
 
@@ -84,6 +87,10 @@ export default function App() {
   const [googleToken, setGoogleToken] = useState<string | null>(null);
   const [isDriveSyncing, setIsDriveSyncing] = useState(false);
   const [driveSyncMessage, setDriveSyncMessage] = useState<string | null>(null);
+  const [showCustomConfig, setShowCustomConfig] = useState(false);
+  const [customConfigStr, setCustomConfigStr] = useState(() => {
+    return localStorage.getItem('kanooz_custom_firebase_config') || '';
+  });
 
   // Initialize Google Auth state listener
   useEffect(() => {
@@ -274,17 +281,31 @@ export default function App() {
       
       if (isDomainError) {
         const currentDomain = window.location.hostname;
-        alert(
-          "🔒 Google Auth: Unauthorized Client Domain!\n\n" +
-          "Firebase Authentication requires this domain to be authorized under your project's settings before launching sign-in popups.\n\n" +
-          "To fix this, please follow these simple steps:\n" +
-          "1. Open your Firebase Console settings page:\n" +
-          "   https://console.firebase.google.com/project/spiritual-amplifier-307pf/authentication/settings\n\n" +
-          "2. Find the 'Authorized domains' card, click 'Add domain' or 'Add authorized domain'.\n\n" +
-          "3. Copy and paste your current environment domain:\n" +
-          `   👉 ${currentDomain}\n\n` +
-          "Once registered, refresh the page and try connecting again!"
-        );
+        const activeProjectId = auth.app.options.projectId || 'spiritual-amplifier-307pf';
+        const hasCustomConfig = !!localStorage.getItem('kanooz_custom_firebase_config');
+
+        if (hasCustomConfig) {
+          alert(
+            "🔒 Google Auth: Unauthorized Client Domain!\n\n" +
+            `Your custom Firebase project (${activeProjectId}) requires the domain "${currentDomain}" to be authorized before signing in.\n\n` +
+            "To resolve this, please follow these simple steps:\n" +
+            `1. Open your own Firebase Console settings page:\n` +
+            `   https://console.firebase.google.com/project/${activeProjectId}/authentication/settings\n\n` +
+            "2. Find the 'Authorized domains' section and click 'Add domain'.\n\n" +
+            "3. Copy and paste your current environment domain:\n" +
+            `   👉 ${currentDomain}\n\n` +
+            "Once registered, refresh the page and try connecting again!"
+          );
+        } else {
+          alert(
+            "🔒 Google Auth: Unauthorized Client Domain!\n\n" +
+            `You are viewing this app from the external domain "${currentDomain}" (GitHub Pages or your private deployment).\n\n` +
+            "The system default Firebase project is owned by the development environment, so you do not have permission to manage its authorized domains.\n\n" +
+            "💡 EASY SOLUTION:\n" +
+            "Please paste your OWN custom Firebase project credentials in the 'Developer Firebase Settings' panel below!\n" +
+            "This will let you completely authorize your custom domains and connect to Google Drive perfectly."
+          );
+        }
         setDriveSyncMessage(`Unauthorized domain. Please authorize: ${currentDomain}`);
       } else if (isPopupError) {
         alert(
@@ -317,6 +338,29 @@ export default function App() {
       } finally {
         setIsDriveSyncing(false);
       }
+    }
+  };
+
+  const handleSaveCustomConfig = () => {
+    if (!customConfigStr.trim()) {
+      if (localStorage.getItem('kanooz_custom_firebase_config')) {
+        localStorage.removeItem('kanooz_custom_firebase_config');
+        alert('Custom Firebase configuration cleared! Resetting back to default system credentials.');
+        window.location.reload();
+      }
+      return;
+    }
+    try {
+      const parsed = JSON.parse(customConfigStr);
+      if (!parsed.apiKey || !parsed.authDomain || !parsed.projectId) {
+        alert('Error: The pasted JSON must be a valid Firebase configuration object. It must contain at least "apiKey", "authDomain", and "projectId".');
+        return;
+      }
+      localStorage.setItem('kanooz_custom_firebase_config', JSON.stringify(parsed, null, 2));
+      alert('🎉 Success! Custom Firebase credentials applied.\\n\\nThe page will now reload to initialize your Firebase project.');
+      window.location.reload();
+    } catch (err: any) {
+      alert('Error parsing JSON content. Please make sure you copied the correct JSON configuration directly from Firebase Console (Web App settings setup) and that it is fully valid.');
     }
   };
 
@@ -850,7 +894,7 @@ export default function App() {
                             </div>
 
                             {driveSyncMessage && (
-                              <p className="text-[10px] text-indigo-650 font-medium italic text-center mt-1 animate-pulse">
+                              <p className="text-[10px] text-indigo-600 italic text-center animate-pulse">
                                 {driveSyncMessage}
                               </p>
                             )}
@@ -887,12 +931,78 @@ export default function App() {
                             </p>
 
                             {driveSyncMessage && (
-                              <p className="text-[10px] text-indigo-600 italic text-center animate-pulse">
+                              <p className="text-[10px] text-indigo-600 italic text-center animate-pulse font-medium">
                                 {driveSyncMessage}
                               </p>
                             )}
                           </div>
                         )}
+
+                        {/* Developer Firebase Settings Panel */}
+                        <div className="mt-4 border-t border-slate-100 pt-3 text-left">
+                          <button
+                            type="button"
+                            onClick={() => setShowCustomConfig(!showCustomConfig)}
+                            className="flex items-center justify-between w-full text-[10px] uppercase tracking-wider font-extrabold text-slate-500 hover:text-indigo-650 transition-colors cursor-pointer"
+                          >
+                            <span className="flex items-center gap-1.5 font-bold">
+                              <Sliders className="w-3.5 h-3.5 text-indigo-500" />
+                              Custom Firebase Project (Advanced)
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-extrabold font-mono">
+                              {showCustomConfig ? "HIDE ▲" : "SHOW ▼"}
+                            </span>
+                          </button>
+
+                          {showCustomConfig && (
+                            <div className="mt-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200 text-left space-y-2.5">
+                              <p className="text-[10px] text-[#555] leading-relaxed">
+                                Avoid domain limits on <b>GitHub Pages ({window.location.hostname})</b> by copy-pasting your own Firebase web configuration JSON here. This links this app interface directly to your personal Firebase backend.
+                              </p>
+                              
+                              <textarea
+                                value={customConfigStr}
+                                onChange={(e) => setCustomConfigStr(e.target.value)}
+                                placeholder={`{\n  "apiKey": "AIzaSy...",\n  "authDomain": "my-project.firebaseapp.com",\n  "projectId": "my-project"\n}`}
+                                className="w-full h-24 font-mono text-[10px] p-2 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:outline-hidden leading-normal shadow-2xs placeholder-slate-400"
+                              />
+
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={handleSaveCustomConfig}
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10.5px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+                                >
+                                  Save & Apply
+                                </button>
+                                {localStorage.getItem('kanooz_custom_firebase_config') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCustomConfigStr('');
+                                      localStorage.removeItem('kanooz_custom_firebase_config');
+                                      alert('Resetting to default system credentials...');
+                                      window.location.reload();
+                                    }}
+                                    className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-[10.5px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                                  >
+                                    Reset to Default
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="text-[9.5px] bg-amber-50 rounded-lg p-3 border border-amber-100 text-slate-600 leading-normal space-y-1.5">
+                                <span className="font-bold text-amber-900 block">💡 Standard Setup Steps:</span>
+                                <ol className="list-decimal pl-4.5 space-y-1 text-slate-500">
+                                  <li>Create a project on <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">firebase.google.com</a>.</li>
+                                  <li>Click <b>Authentication</b> and enable <b>Google Sign-In</b> under Sign-in providers.</li>
+                                  <li>In Authentication settings &gt; <b>Authorized domains</b>, click "Add domain" and add <code>{window.location.hostname}</code>.</li>
+                                  <li>In Project Settings &gt; General &gt; Web apps, create a web app and copy its config block value directly here.</li>
+                                </ol>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

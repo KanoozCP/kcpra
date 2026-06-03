@@ -1,8 +1,27 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';
+import defaultFirebaseConfig from '../../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
+// Get active Firebase configuration dynamically (custom from localStorage, or default)
+const getActiveConfig = () => {
+  const customStr = localStorage.getItem('kanooz_custom_firebase_config');
+  if (customStr) {
+    try {
+      const parsed = JSON.parse(customStr);
+      if (parsed.apiKey && parsed.authDomain && parsed.projectId) {
+        return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse custom Firebase config:', e);
+    }
+  }
+  return defaultFirebaseConfig;
+};
+
+const activeConfig = getActiveConfig();
+
+// Initialize the app cleanly
+const app = getApps().length === 0 ? initializeApp(activeConfig) : getApp();
 export const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
