@@ -16,9 +16,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   // Load latest credentials from localStorage, fallback to Admin/Admin
   const getStoredCredentials = () => {
     try {
-      const stored = localStorage.getItem('kanooz_admin_credentials');
-      if (stored) {
-        return JSON.parse(stored);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = window.localStorage.getItem('kanooz_admin_credentials');
+        if (stored) {
+          return JSON.parse(stored);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -40,7 +42,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
       // Case-insensitive comparison for ultimate simplicity and user-friendliness
       if (cleanInputUser.toLowerCase() === username.toLowerCase() && cleanInputPass.toLowerCase() === password.toLowerCase()) {
-        sessionStorage.setItem('kanooz_logged_in', 'true');
+        try {
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            window.sessionStorage.setItem('kanooz_logged_in', 'true');
+          }
+        } catch (e) {
+          console.warn('sessionStorage is locked but allowing transient in-memory login', e);
+        }
         onLoginSuccess();
       } else {
         setError('Invalid username or password. Please try again.');

@@ -55,6 +55,55 @@ import GanttView from './components/GanttChart';
 import ShortageScreen from './components/ShortageAnalysis';
 import Login from './components/Login';
 
+// Bulletproof Storage Utilities to bypass SecurityErrors in sandboxed previews
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (e) {}
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {}
+  }
+};
+
+const safeSessionStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return typeof window !== 'undefined' && window.sessionStorage ? window.sessionStorage.getItem(key) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.setItem(key, value);
+      }
+    } catch (e) {}
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.removeItem(key);
+      }
+    } catch (e) {}
+  }
+};
+
 const STORAGE_KEY = 'kanooz_system_data';
 
 export default function App() {
@@ -89,7 +138,7 @@ export default function App() {
   const [driveSyncMessage, setDriveSyncMessage] = useState<string | null>(null);
   const [showCustomConfig, setShowCustomConfig] = useState(false);
   const [customConfigStr, setCustomConfigStr] = useState(() => {
-    return localStorage.getItem('kanooz_custom_firebase_config') || '';
+    return safeLocalStorage.getItem('kanooz_custom_firebase_config') || '';
   });
 
   // Initialize Google Auth state listener
@@ -112,17 +161,17 @@ export default function App() {
   // Force Light Theme (Dark Mode Disabled Throughout)
   useEffect(() => {
     document.documentElement.classList.remove('dark');
-    localStorage.removeItem('kanooz_theme');
+    safeLocalStorage.removeItem('kanooz_theme');
   }, []);
 
   // Load data
   useEffect(() => {
-    const loggedInStatus = sessionStorage.getItem('kanooz_logged_in');
+    const loggedInStatus = safeSessionStorage.getItem('kanooz_logged_in');
     if (loggedInStatus === 'true') {
       setIsLoggedIn(true);
     }
 
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = safeLocalStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       setManpower(parsed.manpower || []);
@@ -133,7 +182,7 @@ export default function App() {
 
   // Save data
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ manpower, projects, assignments }));
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify({ manpower, projects, assignments }));
   }, [manpower, projects, assignments]);
 
   const handleUpdateCredentials = (e: React.FormEvent) => {
@@ -141,7 +190,7 @@ export default function App() {
     
     let currentCreds = { username: 'Admin', password: 'Admin' };
     try {
-      const stored = localStorage.getItem('kanooz_admin_credentials');
+      const stored = safeLocalStorage.getItem('kanooz_admin_credentials');
       if (stored) {
         currentCreds = JSON.parse(stored);
       }
@@ -174,7 +223,7 @@ export default function App() {
       password: newPassword.trim()
     };
 
-    localStorage.setItem('kanooz_admin_credentials', JSON.stringify(nextCreds));
+    safeLocalStorage.setItem('kanooz_admin_credentials', JSON.stringify(nextCreds));
     alert('Security Success: Administrator credentials modified successfully. Please keep them safe.');
     setShowCredentialsModal(false);
     
@@ -187,7 +236,7 @@ export default function App() {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you would like to sign out of the planning portal?')) {
-      sessionStorage.removeItem('kanooz_logged_in');
+      safeSessionStorage.removeItem('kanooz_logged_in');
       setIsLoggedIn(false);
     }
   };
@@ -208,9 +257,9 @@ export default function App() {
     const nextAssignments = resetAssignmentsOpt ? [] : assignments;
 
     if (resetManpowerOpt && resetProjectsOpt && resetAssignmentsOpt) {
-      localStorage.removeItem(STORAGE_KEY);
+      safeLocalStorage.removeItem(STORAGE_KEY);
     } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
+      safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify({ 
         manpower: nextManpower, 
         projects: nextProjects, 
         assignments: nextAssignments 
@@ -282,7 +331,7 @@ export default function App() {
       if (isDomainError) {
         const currentDomain = window.location.hostname;
         const activeProjectId = auth.app.options.projectId || 'spiritual-amplifier-307pf';
-        const hasCustomConfig = !!localStorage.getItem('kanooz_custom_firebase_config');
+        const hasCustomConfig = !!safeLocalStorage.getItem('kanooz_custom_firebase_config');
 
         if (hasCustomConfig) {
           alert(
@@ -343,8 +392,8 @@ export default function App() {
 
   const handleSaveCustomConfig = () => {
     if (!customConfigStr.trim()) {
-      if (localStorage.getItem('kanooz_custom_firebase_config')) {
-        localStorage.removeItem('kanooz_custom_firebase_config');
+      if (safeLocalStorage.getItem('kanooz_custom_firebase_config')) {
+        safeLocalStorage.removeItem('kanooz_custom_firebase_config');
         alert('Custom Firebase configuration cleared! Resetting back to default system credentials.');
         window.location.reload();
       }
@@ -387,7 +436,7 @@ export default function App() {
     }
 
     if (parsed && parsed.apiKey && parsed.authDomain && parsed.projectId) {
-      localStorage.setItem('kanooz_custom_firebase_config', JSON.stringify(parsed, null, 2));
+      safeLocalStorage.setItem('kanooz_custom_firebase_config', JSON.stringify(parsed, null, 2));
       alert('🎉 Success! Custom Firebase credentials applied.\n\nThe page will now reload to initialize your Firebase project.');
       window.location.reload();
     } else {
@@ -677,7 +726,7 @@ export default function App() {
                 onClick={() => {
                   let currentCreds = { username: 'Admin', password: 'Admin' };
                   try {
-                    const stored = localStorage.getItem('kanooz_admin_credentials');
+                    const stored = safeLocalStorage.getItem('kanooz_admin_credentials');
                     if (stored) currentCreds = JSON.parse(stored);
                   } catch (e) {}
                   setNewUsername(currentCreds.username);
@@ -693,7 +742,7 @@ export default function App() {
                 onClick={() => {
                   let currentCreds = { username: 'Admin', password: 'Admin' };
                   try {
-                    const stored = localStorage.getItem('kanooz_admin_credentials');
+                    const stored = safeLocalStorage.getItem('kanooz_admin_credentials');
                     if (stored) currentCreds = JSON.parse(stored);
                   } catch (e) {}
                   setNewUsername(currentCreds.username);
@@ -1014,12 +1063,12 @@ export default function App() {
                                 >
                                   Save & Apply
                                 </button>
-                                {localStorage.getItem('kanooz_custom_firebase_config') && (
+                                {safeLocalStorage.getItem('kanooz_custom_firebase_config') && (
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setCustomConfigStr('');
-                                      localStorage.removeItem('kanooz_custom_firebase_config');
+                                      safeLocalStorage.removeItem('kanooz_custom_firebase_config');
                                       alert('Resetting to default system credentials...');
                                       window.location.reload();
                                     }}

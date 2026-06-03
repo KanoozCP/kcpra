@@ -2,9 +2,34 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import defaultFirebaseConfig from '../../firebase-applet-config.json';
 
+// Bulletproof Storage Utility to bypass SecurityError issues in sandboxed frames / incognito
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (e) {}
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {}
+  }
+};
+
 // Get active Firebase configuration dynamically (custom from localStorage, or default)
 const getActiveConfig = () => {
-  const customStr = localStorage.getItem('kanooz_custom_firebase_config');
+  const customStr = safeLocalStorage.getItem('kanooz_custom_firebase_config');
   if (customStr) {
     try {
       const parsed = JSON.parse(customStr);
@@ -28,7 +53,7 @@ const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/drive');
 
 let isSigningIn = false;
-let cachedAccessToken: string | null = localStorage.getItem('kanooz_google_drive_token');
+let cachedAccessToken: string | null = safeLocalStorage.getItem('kanooz_google_drive_token');
 
 // Initialize auth state listener
 export const initAuth = (
@@ -37,7 +62,7 @@ export const initAuth = (
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      const storedToken = localStorage.getItem('kanooz_google_drive_token');
+      const storedToken = safeLocalStorage.getItem('kanooz_google_drive_token');
       if (storedToken) {
         cachedAccessToken = storedToken;
         if (onAuthSuccess) onAuthSuccess(user, storedToken);
@@ -49,7 +74,7 @@ export const initAuth = (
       }
     } else {
       cachedAccessToken = null;
-      localStorage.removeItem('kanooz_google_drive_token');
+      safeLocalStorage.removeItem('kanooz_google_drive_token');
       if (onAuthFailure) onAuthFailure();
     }
   });
@@ -66,7 +91,7 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     }
 
     cachedAccessToken = credential.accessToken;
-    localStorage.setItem('kanooz_google_drive_token', cachedAccessToken);
+    safeLocalStorage.setItem('kanooz_google_drive_token', cachedAccessToken);
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
     console.error('Sign in error:', error);
@@ -83,7 +108,7 @@ export const getAccessToken = async (): Promise<string | null> => {
 export const logout = async () => {
   await auth.signOut();
   cachedAccessToken = null;
-  localStorage.removeItem('kanooz_google_drive_token');
+  safeLocalStorage.removeItem('kanooz_google_drive_token');
 };
 
 // File constant name
