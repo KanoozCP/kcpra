@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;705;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Dynamic Transition for state/theme shifts */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+
+
+
+/* ==========================================================================
+   A4 PORTRAIT SPECIFIC PROFESSIONAL PRINTING RULES
+   ========================================================================== */
+
+@media print {
+  /* Set document size as A4 Portrait */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+
+  /* Reset layout boxes and bodies to standard light background */
+  html, body {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 10pt !important;
+    width: 210mm !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide interactive elements, side navigation, headers and buttons */
+  aside,
+  header,
+  footer,
+  button,
+  .no-print,
+  .reset-modal,
+  iframe,
+  [role="dialog"],
+  .fixed {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Adjust main frame to print without margins or hidden scroll areas */
+  main {
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure all content boxes and tables use full print width */
+  .max-w-7xl,
+  .mx-auto,
+  .flex-1 {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Expand scrolling sections completely so details are not clipped */
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-hidden,
+  .max-h-\[90vh\],
+  .max-h-\[50vh\] {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* Keep table text sharp and layout uniform */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  img {
+    max-width: 100% !important;
+  }
+
+  /* Custom styling for project cards & tables on A4 */
+  .card,
+  .bg-white,
+  .rounded-2xl {
+    box-shadow: none !important;
+    border: 1px solid #CCCCCC !important;
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 5mm !important;
+    padding: 4mm !important;
+    border-radius: 4px !important;
+  }
+
+  /* Force print-specific headers for identification */
+  body::before {
+    content: "KANOOZ CENTRAL RESOURCE PLANNING REPORT" !important;
+    display: block !important;
+    text-align: center !important;
+    font-size: 11pt !important;
+    font-weight: bold !important;
+    margin-bottom: 8mm !important;
+    border-bottom: 2px solid #333333 !important;
+    padding-bottom: 2mm !important;
+    color: #1A1A1A !important;
+  }
+}

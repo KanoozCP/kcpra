@@ -1,0 +1,8 @@
+{
+  "name": "KANOOZ Central Planning",
+  "description": "Professional resource management and manpower planning tool for central planning teams, featuring automated assignment algorithms and Gantt visualizations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

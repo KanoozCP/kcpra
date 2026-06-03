@@ -1,0 +1,806 @@
+import { useState, useRef, ChangeEvent } from 'react';
+import { Plus, Trash2, LayoutGrid, List, MapPin, Hash, Calculator, X, Save, Layers, Download, Upload, AlertCircle, Building2, Calendar, Search, ChevronDown, ChevronRight, FolderMinus, FolderPlus, Edit2 } from 'lucide-react';
+import { Project, ProjectRequirement, Craft, ProjectPhase } from '../types';
+import { cn } from '../lib/utils';
+import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
+import { formatToExcelDate, parseExcelDate } from '../lib/dateUtils';
+import { DEFAULT_CRAFTS } from '../lib/constants';
+
+interface Props {
+  projects: Project[];
+  setProjects: (p: Project[]) => void;
+  isAdding?: boolean;
+  onCloseAdd?: () => void;
+}
+
+
+export default function ProjectManagement({ projects, setProjects, isAdding, onCloseAdd }: Props) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<string | null>(null);
+  const [confirmDeleteReqId, setConfirmDeleteReqId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
+  const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+  
+  // Edit Project state
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  const handleSaveEdit = () => {
+    if (!editingProject) return;
+    if (!editingProject.name || !editingProject.code) {
+      alert('Project name and code are required.');
+      return;
+    }
+    const cleanCode = String(editingProject.code).trim();
+    const tokenCode = cleanCode.toUpperCase();
+    
+    // Check duplication with other projects
+    const codeExists = projects.some(p => p.id !== editingProject.id && p.code.toUpperCase().trim() === tokenCode);
+    if (codeExists) {
+      alert(`Error: A project with Code "${cleanCode}" already exists.`);
+      return;
+    }
+
+    setProjects(projects.map(p => {
+      if (p.id === editingProject.id) {
+        return {
+          ...p,
+          name: editingProject.name,
+          code: cleanCode,
+          location: editingProject.location,
+          department: editingProject.department,
+          startDate: editingProject.startDate,
+          endDate: editingProject.endDate
+        };
+      }
+      return p;
+    }));
+    setEditingProject(null);
+  };
+
+  const toggleProject = (projId: string) => {
+    setCollapsedProjects(prev => ({ ...prev, [projId]: !prev[projId] }));
+  };
+
+  const togglePhase = (projIdAndPhase: string) => {
+    setCollapsedPhases(prev => ({ ...prev, [projIdAndPhase]: !prev[projIdAndPhase] }));
+  };
+
+  const expandAllProjects = () => {
+    setCollapsedProjects({});
+  };
+
+  const collapseAllProjects = () => {
+    const collapsed: Record<string, boolean> = {};
+    projects.forEach(p => {
+      collapsed[p.id] = true;
+    });
+    setCollapsedProjects(collapsed);
+  };
+
+  const [newProject, setNewProject] = useState<Partial<Project>>({
+    name: '',
+    code: '',
+    location: 'Main Site',
+    department: '',
+    startDate: dayjs().format('YYYY-MM-DD'),
+    endDate: dayjs().add(6, 'month').format('YYYY-MM-DD')
+  });
+
+  const projectCodeCounts = projects.reduce((acc, p) => {
+    acc[p.code] = (acc[p.code] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const handleCreateProject = () => {
+    if (!newProject.name || !newProject.code) {
+      alert('Missing project name or code');
+      return;
+    }
+    const cleanCode = String(newProject.code).trim();
+    const tokenCode = cleanCode.toUpperCase();
+    if (projects.some(p => p.code.toUpperCase().trim() === tokenCode)) {
+      alert(`Error: A project with Code "${cleanCode}" already exists.`);
+      return;
+    }
+
+    const project: Project = {
+      id: `P-${tokenCode}`,
+      name: newProject.name!,
+      code: cleanCode,
+      location: newProject.location || 'Site Area A',
+      department: newProject.department || '',
+      startDate: newProject.startDate || dayjs().format('YYYY-MM-DD'),
+      endDate: newProject.endDate || dayjs().add(6, 'month').format('YYYY-MM-DD'),
+      requirements: []
+    };
+    setProjects([...projects, project]);
+    setNewProject({ 
+      name: '', 
+      code: '', 
+      location: 'Main Site',
+      department: '',
+      startDate: dayjs().format('YYYY-MM-DD'),
+      endDate: dayjs().add(6, 'month').format('YYYY-MM-DD')
+    });
+    // Do not close automatically to allow multiple entries
+  };
+
+  const handleExport = () => {
+    const flatProjects = projects.flatMap(p => 
+      p.requirements.length > 0 ? p.requirements.map(r => ({
+        'Project Title': p.name,
+        'Project Code': p.code,
+        'Location': p.location,
+        'Department': p.department,
+        'Start Date': formatToExcelDate(p.startDate),
+        'Finish Date': formatToExcelDate(p.endDate),
+        'Required Craft': r.craft,
+        'Phase': r.phase,
+        'Required Qty': r.qty,
+        'Requirement Start': formatToExcelDate(r.startDate),
+        'Requirement End': formatToExcelDate(r.endDate)
+      })) : [{
+        'Project Title': p.name,
+        'Project Code': p.code,
+        'Location': p.location,
+        'Department': p.department,
+        'Start Date': formatToExcelDate(p.startDate),
+        'Finish Date': formatToExcelDate(p.endDate),
+        'Required Craft': '--',
+        'Phase': '--',
+        'Required Qty': 0,
+        'Requirement Start': '--',
+        'Requirement End': '--'
+      }]
+    );
+    const ws = XLSX.utils.json_to_sheet(flatProjects);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Projects");
+    XLSX.writeFile(wb, `Kanooz_Projects_Requirements_${formatToExcelDate(new Date())}.xlsx`);
+  };
+
+  const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const bstr = event.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        // Group by Project Code
+        const projectMap: Record<string, Project> = {};
+
+        data.forEach((row: any) => {
+          const rawCode = String(row['Project Code'] || row['code'] || '').trim();
+          const cleanCodeToken = rawCode.toUpperCase();
+          const name = row['Project Title'] || row['name'] || '';
+          if (!rawCode || !name) return;
+
+          if (!projectMap[cleanCodeToken]) {
+            projectMap[cleanCodeToken] = {
+              id: `P-${cleanCodeToken}`,
+              name: name,
+              code: rawCode,
+              location: row['Location'] || row['location'] || 'Main Site',
+              department: row['Department'] || row['department'] || '',
+              startDate: parseExcelDate(row['Start Date'] || row['startDate']) || dayjs().format('YYYY-MM-DD'),
+              endDate: parseExcelDate(row['Finish Date'] || row['endDate']) || dayjs().add(6, 'month').format('YYYY-MM-DD'),
+              requirements: []
+            };
+          }
+
+          const rawCraft = row['Required Craft'] || row['craft'];
+          const rawQty = row['Required Qty'] || row['qty'];
+          const qty = parseInt(String(rawQty || 0));
+          
+          // If there's a valid craft (not the placeholder '--'), add it as a requirement
+          if (rawCraft && rawCraft !== '--') {
+            const reqStart = parseExcelDate(row['Requirement Start'] || row['requirementStart']) || projectMap[cleanCodeToken].startDate;
+            const reqEnd = parseExcelDate(row['Requirement End'] || row['requirementEnd']) || projectMap[cleanCodeToken].endDate;
+            projectMap[cleanCodeToken].requirements.push({
+              id: `REQ-${Date.now()}-${Math.random().toString(16).substring(2, 10)}`,
+              craft: String(rawCraft),
+              phase: (row['Phase'] || row['phase'] || 'TA') as ProjectPhase,
+              qty: qty,
+              startDate: reqStart,
+              endDate: reqEnd,
+            });
+          }
+        });
+
+        const imported = Object.values(projectMap);
+
+        if (imported.length === 0) {
+          alert('No valid project records found in Excel. Verify columns "Project Title", "Project Code".');
+          return;
+        }
+
+        // Merge: overwrite existing project indices by code so assignments stay perfectly functional
+        const map = new Map(projects.map(p => [p.code.toUpperCase().trim(), p]));
+        imported.forEach(item => {
+          map.set(item.code.toUpperCase().trim(), item);
+        });
+        setProjects(Array.from(map.values()));
+
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        alert(`Successfully synchronized ${imported.length} projects with their site requisitions.`);
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse Projects Excel. Please ensure correct headers (Project Title, Project Code).');
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+
+  const phases: ProjectPhase[] = ['Pre-TA', 'TA', 'Post-TA'];
+
+  const addRequirement = (projectId: string, phase: ProjectPhase = 'TA') => {
+    setProjects(projects.map(p => {
+      if (p.id !== projectId) return p;
+      return {
+        ...p,
+        requirements: [...p.requirements, {
+          id: `REQ-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+          craft: 'Pipe Fitter',
+          phase: phase,
+          qty: 1,
+          startDate: p.startDate,
+          endDate: p.endDate
+        }]
+      };
+    }));
+  };
+
+  const updateReqField = (projectId: string, reqId: string, field: keyof ProjectRequirement, value: any) => {
+    setProjects(projects.map(p => {
+      if (p.id !== projectId) return p;
+      return {
+        ...p,
+        requirements: p.requirements.map(r => r.id === reqId ? { ...r, [field]: value } : r)
+      };
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* ... keeping registration UI as is (starts at line 137) ... */}
+      {isAdding && (
+        <div className="bg-white p-6 rounded-2xl border border-indigo-200 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+              <Layers className="w-5 h-5" /> 
+              Register New Project
+            </h3>
+            <button onClick={onCloseAdd} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-500 uppercase">Project Title</label>
+              <input 
+                type="text" 
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                placeholder="e.g. Shutdown 2026 Phase 1"
+                value={newProject.name}
+                onChange={e => setNewProject({...newProject, name: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-500 uppercase">Project Code</label>
+              <input 
+                type="text" 
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                placeholder="e.g. PR-882"
+                value={newProject.code}
+                onChange={e => setNewProject({...newProject, code: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-500 uppercase">Location</label>
+              <input 
+                type="text" 
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                placeholder="e.g. Ras Tanura"
+                value={newProject.location}
+                onChange={e => setNewProject({...newProject, location: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-500 uppercase">Department</label>
+              <input 
+                type="text" 
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                placeholder="e.g. Maintenance"
+                value={newProject.department}
+                onChange={e => setNewProject({...newProject, department: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-500 uppercase">Start Date</label>
+              <input 
+                type="date" 
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                value={newProject.startDate}
+                onChange={e => setNewProject({...newProject, startDate: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-500 uppercase">Finish Date</label>
+              <input 
+                type="date" 
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+                value={newProject.endDate}
+                onChange={e => setNewProject({...newProject, endDate: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2 lg:col-span-3 flex justify-end">
+              <button 
+                onClick={handleCreateProject}
+                className="px-8 bg-indigo-600 text-white py-2 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                Initialize Project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search projects..." 
+            className="w-full pl-10 pr-4 py-2 bg-white border border-[#E5E5E5] rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-2">
+          {projects.length > 0 && (
+            <div className="flex items-center gap-1.5 border-r border-[#E5E5E5] pr-3 mr-1">
+              <button 
+                onClick={expandAllProjects}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-705 border border-slate-200 bg-white rounded-lg hover:bg-slate-50 transition-colors shadow-3xs"
+                title="Expand All Projects"
+              >
+                <FolderPlus className="w-3.5 h-3.5 text-slate-500" />
+                Expand All
+              </button>
+              <button 
+                onClick={collapseAllProjects}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-705 border border-slate-200 bg-white rounded-lg hover:bg-slate-50 transition-colors shadow-3xs"
+                title="Collapse All Projects"
+              >
+                <FolderMinus className="w-3.5 h-3.5 text-slate-500" />
+                Collapse All
+              </button>
+            </div>
+          )}
+
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImport} 
+            className="hidden" 
+            accept=".xlsx,.xls" 
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-indigo-700 border border-indigo-100 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Import Excel
+          </button>
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#666] border border-[#E5E5E5] rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export Excel
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {projects.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.code.toLowerCase().includes(searchTerm.toLowerCase())).map(project => {
+          const isDuplicate = projectCodeCounts[project.code] > 1;
+          const isProjCollapsed = !!collapsedProjects[project.id];
+          
+          return (
+          <div key={project.id} className={cn(
+            "bg-white rounded-xl border border-[#E5E5E5] shadow-sm overflow-hidden border-l-4 transition-all hover:shadow-md",
+            isDuplicate ? "border-l-red-500" : "border-l-indigo-600"
+          )}>
+            <div 
+              className="p-4 bg-[#FAFAFB]/50 border-b border-[#E5E5E5] flex items-center justify-between cursor-pointer hover:bg-slate-50/60 transition-colors select-none"
+              onClick={() => toggleProject(project.id)}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-1 hover:bg-gray-250/50 rounded-lg text-slate-500 shrink-0">
+                  {isProjCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-[#1A1A1A]">{project.name}</h3>
+                    {isDuplicate && <AlertCircle className="w-4 h-4 text-red-500" title="Duplicate Project Code" />}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1.5">
+                    <span className={cn(
+                      "flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded",
+                      isDuplicate ? "bg-red-50 text-red-650" : "text-indigo-600"
+                    )}>
+                      <Hash className="w-3 h-3" /> {project.code}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-[#666]">
+                      <MapPin className="w-3 h-3 text-[#999]" /> {project.location}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-[#666]">
+                      <Building2 className="w-3 h-3 text-[#999]" /> {project.department || '--'}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-[#666]">
+                      <Calendar className="w-3 h-3 text-[#999]" /> {dayjs(project.startDate).format('DD MMM YY')} — {dayjs(project.endDate).format('DD MMM YY')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  onClick={() => setEditingProject(project)}
+                  className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700 hover:text-indigo-750 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+                  Edit Project
+                </button>
+
+                <button 
+                  onClick={() => addRequirement(project.id)}
+                  className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1.5 rounded-lg transition-colors"
+                >
+                  <Calculator className="w-3.5 h-3.5" />
+                  Define Requirements
+                </button>
+                
+                {confirmDeleteProjectId === project.id ? (
+                  <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                    <button 
+                      onClick={() => {
+                        setProjects(projects.filter(p => p.id !== project.id));
+                        setConfirmDeleteProjectId(null);
+                      }}
+                      className="px-3 py-2 bg-red-500 text-white text-[10px] font-bold rounded-lg hover:bg-red-600 transition-colors shadow-sm"
+                    >
+                      Confirm Delete
+                    </button>
+                    <button 
+                      onClick={() => setConfirmDeleteProjectId(null)}
+                      className="px-3 py-2 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setConfirmDeleteProjectId(project.id)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    title="Delete Project"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* WBS Phase-wise Project Requirements container */}
+            {!isProjCollapsed && (
+              <div className="p-4 border-t border-[#E5E5E5] bg-[#FAFAFB]/20 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Work Breakdown Structure (WBS) Requirements</h4>
+                  <p className="text-[10px] text-gray-400 font-medium">Define skilled craft personnel needed for each key event phase.</p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button 
+                    onClick={() => addRequirement(project.id, 'Pre-TA')}
+                    className="px-2.5 py-1.5 text-[10px] font-extrabold text-amber-800 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100/70 transition-colors"
+                  >
+                    + Add Pre-TA
+                  </button>
+                  <button 
+                    onClick={() => addRequirement(project.id, 'TA')}
+                    className="px-2.5 py-1.5 text-[10px] font-extrabold text-rose-800 bg-rose-50 rounded-lg border border-rose-200 hover:bg-rose-100/70 transition-colors"
+                  >
+                    + Add TA
+                  </button>
+                  <button 
+                    onClick={() => addRequirement(project.id, 'Post-TA')}
+                    className="px-2.5 py-1.5 text-[10px] font-extrabold text-emerald-800 bg-emerald-50 rounded-lg border border-emerald-200 hover:bg-emerald-100/70 transition-colors"
+                  >
+                    + Add Post-TA
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {phases.map(phase => {
+                  const phaseKey = `${project.id}-${phase}`;
+                  const isPhaseCollapsed = !!collapsedPhases[phaseKey];
+                  const phaseReqs = project.requirements.filter(r => r.phase === phase);
+
+                  return (
+                    <div key={phase} className="border border-slate-200/60 rounded-xl overflow-hidden shadow-3xs bg-white">
+                      {/* Level 2: WBS Phase Header */}
+                      <div 
+                        className="px-4 py-2.5 bg-slate-50/50 border-b border-slate-200/40 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors select-none"
+                        onClick={() => togglePhase(phaseKey)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="p-0.5 text-slate-500 hover:bg-slate-250/10 rounded">
+                            {isPhaseCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          </div>
+                          <span className={cn(
+                            "px-2 py-0.5 text-[9px] font-extrabold rounded uppercase tracking-wider",
+                            phase === 'TA' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                            phase === 'Pre-TA' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                            'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          )}>
+                            {phase} Phase Requisitions
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-500 font-extrabold bg-slate-100 px-2 py-0.5 rounded-full">
+                            {phaseReqs.length} Crafts
+                          </span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addRequirement(project.id, phase);
+                            }}
+                            className="px-2 py-0.5 text-[9px] bg-white border border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 font-extrabold text-slate-650 rounded transition shadow-3xs"
+                          >
+                            + Quick Add
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Level 2 Content */}
+                      {!isPhaseCollapsed && (
+                        <div>
+                          {phaseReqs.length === 0 ? (
+                            <div className="p-5 text-center text-xs text-slate-400 italic bg-white flex flex-col items-center justify-center gap-1.5">
+                              <span>No personnel requirements defined for {phase} phase yet.</span>
+                              <button
+                                onClick={() => addRequirement(project.id, phase)}
+                                className="text-[10px] font-bold text-indigo-600 hover:underline inline-flex items-center gap-1 mt-1"
+                              >
+                                + Define first {phase} slot requirement
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto bg-white">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="bg-slate-50/30 border-b border-slate-150">
+                                    <th className="px-5 py-2.5 text-[9px] font-extrabold text-[#888] uppercase tracking-wider">Required Craft Name</th>
+                                    <th className="px-5 py-2.5 text-[9px] font-extrabold text-[#888] uppercase tracking-wider text-center w-28">Required Qty</th>
+                                    <th className="px-5 py-2.5 text-[9px] font-extrabold text-[#888] uppercase tracking-wider">Schedule Period</th>
+                                    <th className="px-5 py-2.5 text-[9px] font-extrabold text-[#888] uppercase tracking-wider text-right w-24">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#F3F4F6]">
+                                  {phaseReqs.map(req => (
+                                    <tr 
+                                      key={req.id} 
+                                      className="hover:bg-indigo-50/5 transition-colors group"
+                                    >
+                                      <td className="px-5 py-2.5">
+                                        <input 
+                                          type="text"
+                                          list="common-crafts"
+                                          className="text-xs font-bold text-[#1A1A1A] bg-transparent outline-none w-full border-b border-transparent focus:border-indigo-300 py-0.5"
+                                          placeholder="Enter Craft..."
+                                          value={req.craft}
+                                          onChange={(e) => updateReqField(project.id, req.id, 'craft', e.target.value)}
+                                        />
+                                      </td>
+                                      <td className="px-5 py-2.5 text-center">
+                                        <input 
+                                          type="number" 
+                                          placeholder="Quantity" 
+                                          className="w-16 px-1.5 py-1 border border-[#E5E5E5] rounded text-xs font-bold text-center focus:ring-1 focus:ring-indigo-500 outline-none bg-white"
+                                          value={req.qty} 
+                                          onChange={(e) => updateReqField(project.id, req.id, 'qty', parseInt(e.target.value) || 0)}
+                                        />
+                                      </td>
+                                      <td className="px-5 py-2.5">
+                                        <div className="flex items-center gap-1.5">
+                                          <input 
+                                            type="date" 
+                                            className="text-[10px] p-1 border border-gray-100 rounded bg-white outline-none font-medium text-slate-700"
+                                            value={req.startDate}
+                                            onChange={(e) => updateReqField(project.id, req.id, 'startDate', e.target.value)}
+                                          />
+                                          <span className="text-gray-400 text-[10px]">—</span>
+                                          <input 
+                                            type="date" 
+                                            className="text-[10px] p-1 border border-gray-100 rounded bg-white outline-none font-medium text-slate-700"
+                                            value={req.endDate}
+                                            onChange={(e) => updateReqField(project.id, req.id, 'endDate', e.target.value)}
+                                          />
+                                        </div>
+                                      </td>
+                                      <td className="px-5 py-2.5 text-right">
+                                        {confirmDeleteReqId === req.id ? (
+                                          <div className="flex items-center justify-end gap-1.5">
+                                            <button 
+                                              onClick={() => {
+                                                const updatedReqs = project.requirements.filter(r => r.id !== req.id);
+                                                setProjects(projects.map(p => p.id === project.id ? { ...p, requirements: updatedReqs } : p));
+                                                setConfirmDeleteReqId(null);
+                                              }}
+                                              className="px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded hover:bg-red-600 transition"
+                                            >
+                                              Confirm
+                                            </button>
+                                            <button 
+                                              onClick={() => setConfirmDeleteReqId(null)}
+                                              className="px-2 py-0.5 bg-white text-gray-500 text-[9px] font-bold rounded border border-gray-200 hover:bg-gray-100 transition"
+                                            >
+                                              Exit
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <button 
+                                            onClick={() => setConfirmDeleteReqId(req.id)}
+                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Remove requirement"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            )}
+          </div>
+        );
+      })}
+      </div>
+
+      {/* Edit Project Modal Overlay */}
+      {editingProject && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-[24px] border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <b className="text-base text-slate-900">Edit Project Settings</b>
+                <p className="text-[11px] text-slate-500 mt-0.5">Modify core project timelines and area parameters</p>
+              </div>
+              <button 
+                onClick={() => setEditingProject(null)} 
+                className="p-1 px-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100/80 rounded-lg text-sm transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form Content */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">Project Title</span>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 outline-none bg-white shadow-3xs"
+                    value={editingProject.name}
+                    onChange={e => setEditingProject({...editingProject, name: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">Project Code</span>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 outline-none bg-white shadow-3xs"
+                    value={editingProject.code}
+                    onChange={e => setEditingProject({...editingProject, code: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">Location</span>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 outline-none bg-white shadow-3xs"
+                    value={editingProject.location}
+                    onChange={e => setEditingProject({...editingProject, location: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">Department</span>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:border-indigo-500 outline-none bg-white shadow-3xs"
+                    value={editingProject.department || ''}
+                    onChange={e => setEditingProject({...editingProject, department: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">Start Date</span>
+                  <input 
+                    type="date" 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:border-indigo-500 outline-none bg-white shadow-3xs"
+                    value={editingProject.startDate}
+                    onChange={e => setEditingProject({...editingProject, startDate: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">Finish Date</span>
+                  <input 
+                    type="date" 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:border-indigo-500 outline-none bg-white shadow-3xs"
+                    value={editingProject.endDate}
+                    onChange={e => setEditingProject({...editingProject, endDate: e.target.value})}
+                  />
+                </div>
+
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              <button 
+                onClick={() => setEditingProject(null)}
+                className="px-4 py-2 hover:bg-slate-100 text-xs font-bold text-slate-600 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveEdit}
+                className="px-5 py-2 bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold rounded-lg transition-colors shadow-xs"
+              >
+                Save Changes
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      <datalist id="common-crafts">
+        {DEFAULT_CRAFTS.map(c => <option key={c} value={c} />)}
+      </datalist>
+    </div>
+  );
+}
