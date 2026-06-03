@@ -766,7 +766,7 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                 </button>
 
                 <p className="text-[10px] text-slate-500 font-medium text-center bg-amber-50 rounded-lg p-2.5 border border-amber-100 leading-normal max-w-xs mx-auto">
-                  💡 <b>Iframe Warning:</b> If you get a popup error, click "New Tab  ↗" in the sidebar/Reports tab to establish initial credentials.
+                  💡 <b>Cookie/Popup Workaround:</b> If popups are blocked by your browser, navigate to the <b>Backup & Sync</b> tab and click <b>Use Redirect Flow</b>. You can also click "New Tab  ↗" in the Reports tab to load the page standalone.
                 </p>
               </div>
             ) : (

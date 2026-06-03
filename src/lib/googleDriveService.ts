@@ -1,5 +1,5 @@
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import defaultFirebaseConfig from '../../firebase-applet-config.json';
 
 // Bulletproof Storage Utility to bypass SecurityError issues in sandboxed frames / incognito
@@ -98,6 +98,31 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     throw error;
   } finally {
     isSigningIn = false;
+  }
+};
+
+// Initiate Google authentication via page redirect
+export const googleSignInRedirect = async (): Promise<void> => {
+  isSigningIn = true;
+  await signInWithRedirect(auth, provider);
+};
+
+// Retrieve results/credential from previous redirect login
+export const checkRedirectResult = async (): Promise<{ user: User; accessToken: string } | null> => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        cachedAccessToken = credential.accessToken;
+        safeLocalStorage.setItem('kanooz_google_drive_token', cachedAccessToken);
+        return { user: result.user, accessToken: cachedAccessToken };
+      }
+    }
+    return null;
+  } catch (error: any) {
+    console.error('Redirect result retrieve error:', error);
+    throw error;
   }
 };
 

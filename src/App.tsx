@@ -39,6 +39,8 @@ import { formatToExcelDate, parseExcelDate } from './lib/dateUtils';
 import { 
   initAuth as initGoogleAuth, 
   googleSignIn, 
+  googleSignInRedirect,
+  checkRedirectResult,
   logout as googleLogout, 
   saveToDrive, 
   loadFromDrive,
@@ -140,6 +142,56 @@ export default function App() {
   const [customConfigStr, setCustomConfigStr] = useState(() => {
     return safeLocalStorage.getItem('kanooz_custom_firebase_config') || '';
   });
+
+  // Check Redirect Result on mount to handle redirect auth flow
+  useEffect(() => {
+    const handleRedirect = async () => {
+      try {
+        const result = await checkRedirectResult();
+        if (result) {
+          setGoogleUser(result.user);
+          setGoogleToken(result.accessToken);
+          setDriveSyncMessage('Successfully connected to Google Drive!');
+        }
+      } catch (err: any) {
+        console.error('Redirect result exception:', err);
+        const isDomainError = err.code === 'auth/unauthorized-domain' || 
+                              (err.message && err.message.includes('unauthorized-domain'));
+        const isOpenError = err.code === 'auth/operation-not-allowed' || 
+                            (err.message && err.message.includes('operation-not-allowed'));
+        const currentDomain = window.location.hostname;
+        const activeProjectId = auth.app.options.projectId || 'spiritual-amplifier-307pf';
+
+        if (isDomainError) {
+          alert(
+            "🔒 Google Auth (Redirect): Unauthorized Client Domain!\n\n" +
+            `Your custom Firebase project (${activeProjectId}) requires the domain "${currentDomain}" to be authorized.\n\n` +
+            "To fix this, please follow these simple steps:\n" +
+            `1. Open Firebase Authentication Settings:\n` +
+            `   https://console.firebase.google.com/project/${activeProjectId}/authentication/settings\n\n` +
+            "2. Find 'Authorized domains' and click 'Add domain'.\n" +
+            `3. Add your current domain:\n` +
+            `   👉 ${currentDomain}\n\n` +
+            "Then return here and connect again!"
+          );
+        } else if (isOpenError) {
+          alert(
+            "🔒 Google Sign-In Method Disabled!\n\n" +
+            `Your custom Firebase project (${activeProjectId}) has not enabled Google as a safe sign-in provider.\n\n` +
+            "How to enable Google Provider (takes 1 minute):\n" +
+            `1. Open project settings provider tab:\n` +
+            `   https://console.firebase.google.com/project/${activeProjectId}/authentication/providers\n\n` +
+            "2. Click the 'Add new provider' button and choose 'Google'.\n" +
+            "3. Toggle 'Enable', specify a support email, and click 'Save'.\n\n" +
+            "Once saved, return here and retry!"
+          );
+        } else {
+          alert(`Google Redirect Login Failed: ${err.message || 'Please check your configurations.'}`);
+        }
+      }
+    };
+    handleRedirect();
+  }, []);
 
   // Initialize Google Auth state listener
   useEffect(() => {
@@ -324,13 +376,17 @@ export default function App() {
     } catch (err: any) {
       console.error(err);
       const isPopupError = err.code === 'auth/popup-closed-by-user' || 
-                           (err.message && err.message.includes('popup-closed-by-user'));
+                           (err.message && err.message.includes('popup-closed-by-user')) ||
+                           err.code === 'auth/popup-blocked' ||
+                           (err.message && err.message.includes('popup-blocked'));
       const isDomainError = err.code === 'auth/unauthorized-domain' || 
                             (err.message && err.message.includes('unauthorized-domain'));
+      const isOpenError = err.code === 'auth/operation-not-allowed' || 
+                          (err.message && err.message.includes('operation-not-allowed'));
+      const activeProjectId = auth.app.options.projectId || 'spiritual-amplifier-307pf';
+      const currentDomain = window.location.hostname;
       
       if (isDomainError) {
-        const currentDomain = window.location.hostname;
-        const activeProjectId = auth.app.options.projectId || 'spiritual-amplifier-307pf';
         const hasCustomConfig = !!safeLocalStorage.getItem('kanooz_custom_firebase_config');
 
         if (hasCustomConfig) {
@@ -356,19 +412,45 @@ export default function App() {
           );
         }
         setDriveSyncMessage(`Unauthorized domain. Please authorize: ${currentDomain}`);
+      } else if (isOpenError) {
+        alert(
+          "🔒 Google Sign-In Method Disabled!\n\n" +
+          `Your custom Firebase project (${activeProjectId}) has not enabled Google as a safe sign-in provider yet.\n\n` +
+          "HOW TO ENABLE GOOGLE PROVIDER (Takes 1 Minute):\n" +
+          `1. Open your Firebase project console directly:\n` +
+          `   https://console.firebase.google.com/project/${activeProjectId}/authentication/providers\n\n` +
+          "2. Click the 'Add new provider' button and select 'Google' from the list.\n" +
+          "3. Toggle the switch to 'Enable', choose a project support email, and click 'Save'.\n\n" +
+          "After saving the Firebase console changes, return here and try connecting again!"
+        );
+        setDriveSyncMessage('Google provider disabled in Firebase.');
       } else if (isPopupError) {
         alert(
           "⚠️ Google Auth Popup Blocked or Closed\n\n" +
-          "This error occurs when standard login popups are restricted or blocked inside the sandboxed preview iframe of Google AI Studio.\n\n" +
-          "To fix this, please click 'New Tab ↗' under the Connect Google Drive button (or open the app link directly) to log in. Standalone windows have no sandbox limitations and the popup will work perfectly!"
+          "This error occurs when standard login popups are restricted or blocked by your browser settings or inside sandboxed previews.\n\n" +
+          "💡 EASY WORKAROUND:\n" +
+          "Please click the 'Use Redirect Flow' button below instead! It bypasses popup blocking and works perfectly on all devices and browsers."
         );
-        setDriveSyncMessage('Popup blocked. Please login in a New Tab.');
+        setDriveSyncMessage('Popup blocked. Please use Redirect Flow.');
       } else {
         alert(`Google Connection Failed: ${err.message || 'Check your internet connection or browser settings.'}`);
         setDriveSyncMessage(null);
       }
     } finally {
       setIsDriveSyncing(false);
+    }
+  };
+
+  const handleGoogleConnectRedirect = async () => {
+    setIsDriveSyncing(true);
+    setDriveSyncMessage('Redirecting to Google Sign-In...');
+    try {
+      await googleSignInRedirect();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Could not start redirect flow: ${err.message || 'Error occurred.'}`);
+      setIsDriveSyncing(false);
+      setDriveSyncMessage(null);
     }
   };
 
@@ -1001,8 +1083,16 @@ export default function App() {
                                   <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
                                   <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
                                 </svg>
-                                <span>Connect Google Drive</span>
+                                <span>Connect Google Drive (Popup)</span>
                               </div>
+                            </button>
+
+                            <button 
+                              onClick={handleGoogleConnectRedirect}
+                              disabled={isDriveSyncing}
+                              className="w-full flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-750 rounded-xl py-2 px-4 shadow-3xs cursor-pointer text-xs font-bold transition-colors disabled:opacity-50"
+                            >
+                              <span>Use Redirect Flow (Bypasses Popup Limits)</span>
                             </button>
                             
                             <p className="text-[10px] text-slate-500 font-medium text-center bg-amber-50 rounded-lg p-2.5 border border-amber-100 leading-normal">
@@ -1015,7 +1105,7 @@ export default function App() {
                               >
                                 New Tab ↗
                               </a> 
-                              first to connect successfully.
+                              first to connect successfully, or use the <b>Redirect Flow</b> button above.
                             </p>
 
                             {driveSyncMessage && (
