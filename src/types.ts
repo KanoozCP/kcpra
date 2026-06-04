@@ -27,6 +27,8 @@ export interface ProjectRequirement {
   endDate: string;
 }
 
+export type ProjectStatus = 'Auto' | 'In Progress' | 'Completed' | 'Hold' | 'Rescheduled' | 'Cancelled';
+
 export interface Project {
   id: string;
   name: string;
@@ -36,6 +38,7 @@ export interface Project {
   startDate: string;
   endDate: string;
   requirements: ProjectRequirement[];
+  status?: ProjectStatus;
 }
 
 export interface Assignment {

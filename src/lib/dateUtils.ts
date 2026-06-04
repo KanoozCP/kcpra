@@ -1,7 +1,26 @@
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { Project } from '../types';
 
 dayjs.extend(customParseFormat);
+
+/**
+ * Resolves the actual status of a project. If manual override is selected (Hold, Rescheduled, Cancelled, In Progress, Completed),
+ * it returns that. Otherwise, it dynamically determines if the project is "In Progress" or "Completed" based on current date.
+ */
+export function getProjectActualStatus(project: Project): 'In Progress' | 'Completed' | 'Hold' | 'Rescheduled' | 'Cancelled' {
+  if (project.status && project.status !== 'Auto') {
+    return project.status as 'In Progress' | 'Completed' | 'Hold' | 'Rescheduled' | 'Cancelled';
+  }
+  const today = dayjs();
+  const end = dayjs(project.endDate);
+  
+  if (today.isAfter(end, 'day')) {
+    return 'Completed';
+  } else {
+    return 'In Progress';
+  }
+}
 
 /**
  * Parses any incoming excel date value (serial number or formatted string)

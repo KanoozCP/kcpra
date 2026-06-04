@@ -995,16 +995,20 @@ export default function App() {
               
               <div className="flex items-center gap-2">
                 {/* Print to PDF Action */}
-                <button
-                  onClick={() => window.print()}
-                  className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all flex items-center gap-1.5 text-xs font-bold no-print cursor-pointer"
-                  title="Print current page to PDF (A4 format)"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Print to PDF</span>
-                </button>
+                {activeTab !== Tab.REPORTS && (
+                  <>
+                    <button
+                      onClick={() => window.print()}
+                      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all flex items-center gap-1.5 text-xs font-bold no-print cursor-pointer"
+                      title="Print current page to PDF (A4 format)"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Print to PDF</span>
+                    </button>
 
-                <div className="h-4 w-[1px] bg-[#E5E5E5] mx-1 no-print" />
+                    <div className="h-4 w-[1px] bg-[#E5E5E5] mx-1 no-print" />
+                  </>
+                )}
 
                 <button 
                   onClick={handleReset}

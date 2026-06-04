@@ -17,6 +17,7 @@ import {
 import { Manpower, Project, Assignment } from '../types';
 import { calculateShortages } from '../lib/assignment-engine';
 import { cn } from '../lib/utils';
+import { getProjectActualStatus } from '../lib/dateUtils';
 import dayjs from 'dayjs';
 
 interface Props {
@@ -35,6 +36,7 @@ export default function ShortageAnalysis({ manpower, projects, assignments }: Pr
   // WBS Collapse States
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+  const [sortBy, setSortBy] = useState<'gap' | 'startDate' | 'status' | 'craft'>('gap');
 
   // Grouping logic for WBS representation
   const wbsShortages = useMemo(() => {
@@ -78,11 +80,35 @@ export default function ShortageAnalysis({ manpower, projects, assignments }: Pr
       phaseGroup.items.push(s);
     });
 
-    return Object.values(projectsMap).sort((a, b) => {
-      // Prioritize projects with highest gap totals at the top
-      return b.totalGap - a.totalGap;
+    const resultList = Object.values(projectsMap);
+
+    resultList.sort((a, b) => {
+      if (sortBy === 'status') {
+        const sA = getProjectActualStatus(a.project);
+        const sB = getProjectActualStatus(b.project);
+        if (sA !== sB) {
+          return sA.localeCompare(sB);
+        }
+        return dayjs(a.project.startDate).valueOf() - dayjs(b.project.startDate).valueOf();
+      } else if (sortBy === 'startDate') {
+        return dayjs(a.project.startDate).valueOf() - dayjs(b.project.startDate).valueOf();
+      } else {
+        return b.totalGap - a.totalGap;
+      }
     });
-  }, [shortages, projects]);
+
+    if (sortBy === 'craft') {
+      resultList.forEach(pGroup => {
+        Object.values(pGroup.phases).forEach(phaseGroup => {
+          phaseGroup.items.sort((x, y) => {
+            return x.craft.localeCompare(y.craft);
+          });
+        });
+      });
+    }
+
+    return resultList;
+  }, [shortages, projects, sortBy]);
 
   const toggleProject = (projId: string) => {
     setCollapsedProjects(prev => ({ ...prev, [projId]: !prev[projId] }));
@@ -154,7 +180,21 @@ export default function ShortageAnalysis({ manpower, projects, assignments }: Pr
             <p className="text-[10.5px] text-gray-500 font-medium mt-0.5">Hierarchical evaluation of personnel deficits categorized by project scope, phase schedules, and necessary specialties.</p>
           </div>
           {wbsShortages.length > 0 && (
-            <div className="flex items-center gap-2 self-start sm:self-center">
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+              <div className="flex items-center gap-1.5 shrink-0 bg-white border border-slate-200 px-2 py-1 rounded-xl shadow-3xs">
+                <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest leading-none">Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-white text-[10px] font-bold text-slate-700 outline-none cursor-pointer"
+                >
+                  <option value="gap">Total Gap (Desc)</option>
+                  <option value="startDate">Start Date (Asc)</option>
+                  <option value="status">Project Status (Asc)</option>
+                  <option value="craft">Crew Craft (A-Z)</option>
+                </select>
+              </div>
+
               <button 
                 onClick={expandAll}
                 className="px-3 py-1.5 border border-slate-250 bg-white hover:bg-slate-100/50 rounded-xl text-[10px] font-bold text-slate-700 transition flex items-center gap-1.5"
@@ -199,6 +239,35 @@ export default function ShortageAnalysis({ manpower, projects, assignments }: Pr
                           {pGroup.project.code}
                         </span>
                         <h4 className="text-xs font-bold text-[#1a1a1a] truncate">{pGroup.project.name}</h4>
+                        {(() => {
+                          const status = getProjectActualStatus(pGroup.project);
+                          let badgeColor = '';
+                          switch (status) {
+                            case 'In Progress':
+                              badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                              break;
+                            case 'Completed':
+                              badgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+                              break;
+                            case 'Hold':
+                              badgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                              break;
+                            case 'Rescheduled':
+                              badgeColor = 'bg-indigo-50 text-indigo-750 border-indigo-200';
+                              break;
+                            case 'Cancelled':
+                              badgeColor = 'bg-rose-50 text-rose-700 border-rose-200';
+                              break;
+                          }
+                          return (
+                            <span className={cn(
+                              "px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider rounded border shadow-3xs",
+                              badgeColor
+                            )}>
+                              {status}
+                            </span>
+                          );
+                        })()}
                       </div>
                       <p className="text-[10px] text-gray-450 font-medium mt-0.5">
                         Location: {pGroup.project.location} • Period: {dayjs(pGroup.project.startDate).format('DD MMM')} to {dayjs(pGroup.project.endDate).format('DD MMM YY')}

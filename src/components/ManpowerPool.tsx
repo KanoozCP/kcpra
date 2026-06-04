@@ -22,6 +22,7 @@ const EMPLOYMENT_TYPES: EmploymentType[] = ['Direct', 'Qiwa', 'Local Hire'];
 
 export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseAdd, googleUser, onGoogleConnect }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'badgeNo' | 'craft' | 'joinDate'>('name');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -326,11 +327,25 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
     reader.readAsBinaryString(file);
   };
 
-  const filtered = manpower.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.badgeNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.craft.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAndSorted = (() => {
+    const list = manpower.filter(m => 
+      m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      m.badgeNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.craft.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'badgeNo') {
+        return a.badgeNo.localeCompare(b.badgeNo, undefined, { numeric: true });
+      } else if (sortBy === 'craft') {
+        return (a.craft || '').localeCompare(b.craft || '');
+      } else if (sortBy === 'joinDate') {
+        return dayjs(a.joinDate).valueOf() - dayjs(b.joinDate).valueOf();
+      } else {
+        return a.name.localeCompare(b.name);
+      }
+    });
+  })();
 
   return (
     <div className="space-y-6">
@@ -466,15 +481,30 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
 
       <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm overflow-hidden min-h-[600px] flex flex-col">
       <div className="p-6 border-b border-[#E5E5E5] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888]" />
-          <input 
-            type="text" 
-            placeholder="Search by name, badge, or craft..." 
-            className="w-full pl-10 pr-4 py-2 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-xl">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888]" />
+            <input 
+              type="text" 
+              placeholder="Search by name, badge, or craft..." 
+              className="w-full pl-10 pr-4 py-2 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block leading-none">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-3 py-2 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 cursor-pointer shadow-3xs"
+            >
+              <option value="name">Name (A-Z)</option>
+              <option value="badgeNo">Badge Number</option>
+              <option value="craft">Craft (A-Z)</option>
+              <option value="joinDate">Join Date (Asc)</option>
+            </select>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -530,7 +560,7 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F0F0F0]">
-            {filtered.map((m) => {
+            {filteredAndSorted.map((m) => {
               const isDuplicate = badgeCounts[m.badgeNo] > 1;
               const isEditing = editingId === m.id;
               
@@ -720,7 +750,7 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
           </tbody>
         </table>
         
-        {filtered.length === 0 && (
+        {filteredAndSorted.length === 0 && (
           <div className="p-20 text-center">
             <UserPlus className="w-12 h-12 text-[#E5E5E5] mx-auto mb-4" />
             <h4 className="text-lg font-bold text-[#1A1A1A] mb-1">No manpower records found</h4>

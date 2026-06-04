@@ -4,6 +4,7 @@ import minMax from 'dayjs/plugin/minMax';
 import * as XLSX from 'xlsx';
 import { Manpower, Project, Assignment } from '../types';
 import { cn } from '../lib/utils';
+import { getProjectActualStatus } from '../lib/dateUtils';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -28,6 +29,7 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
   const [zoomScale, setZoomScale] = useState(1);
   const [timelineMode, setTimelineMode] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
+  const [sortBy, setSortBy] = useState<'startDate' | 'status' | 'craft' | 'type'>('startDate');
 
   // Default collapse/expand states: default all to expanded for easy discoverability
   const toggleProject = (projectId: string) => {
@@ -118,9 +120,36 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
   const visibleRows = useMemo(() => {
     const list: any[] = [];
     
-    projects.forEach(project => {
-      // Find all assignments for this specific project
-      const projectAssignments = assignments.filter(a => a.projectId === project.id);
+    // 1. Sort projects
+    const sortedProjects = [...projects].sort((a, b) => {
+      if (sortBy === 'status') {
+        const statusA = getProjectActualStatus(a);
+        const statusB = getProjectActualStatus(b);
+        if (statusA !== statusB) {
+          return statusA.localeCompare(statusB);
+        }
+      }
+      return dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf();
+    });
+
+    sortedProjects.forEach(project => {
+      // Find all assignments for this specific project and sort them
+      let projectAssignments = assignments.filter(a => a.projectId === project.id);
+      
+      if (sortBy === 'craft') {
+        projectAssignments = [...projectAssignments].sort((a, b) => {
+          return a.craft.localeCompare(b.craft);
+        });
+      } else if (sortBy === 'type') {
+        projectAssignments = [...projectAssignments].sort((a, b) => {
+          const workerA = manpower.find(m => m.id === a.workerId);
+          const workerB = manpower.find(m => m.id === b.workerId);
+          const typeA = workerA?.employmentType || '';
+          const typeB = workerB?.employmentType || '';
+          return typeA.localeCompare(typeB);
+        });
+      }
+
       const isExpanded = !!expandedProjects[project.id];
 
       list.push({
@@ -156,7 +185,7 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
     });
 
     return list;
-  }, [projects, assignments, manpower, expandedProjects]);
+  }, [projects, assignments, manpower, expandedProjects, sortBy]);
 
   // View cell widths
   const baseCellWidth = timelineMode === 'daily' ? 44 : timelineMode === 'weekly' ? 100 : 200;
@@ -215,7 +244,7 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
           <div className="h-4 w-[1px] bg-gray-300 mx-1" />
 
           {/* Timeline Resolution Mode */}
-          <div className="flex p-1 bg-gray-200/50 rounded-lg">
+          <div className="flex p-1 bg-gray-200/50 rounded-lg shrink-0">
             {(['daily', 'weekly', 'monthly'] as const).map(mode => (
               <button 
                 key={mode}
@@ -228,6 +257,22 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
                 {mode}
               </button>
             ))}
+          </div>
+
+          <div className="h-4 w-[1px] bg-gray-305 mx-1" />
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-bold text-[#666] uppercase tracking-wider">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-2.5 py-1 bg-white border border-[#E5E5E5] rounded-lg text-[9px] font-bold text-[#333] outline-none cursor-pointer hover:bg-slate-50"
+            >
+              <option value="startDate">Project Start (Asc)</option>
+              <option value="status">Project Status (Asc)</option>
+              <option value="craft">Crew Craft (A-Z)</option>
+              <option value="type">Crew Employment Type (A-Z)</option>
+            </select>
           </div>
         </div>
 
@@ -357,7 +402,26 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
                         <div className="min-w-0">
                           <h4 className="text-xs font-bold text-slate-900 truncate leading-tight flex items-center gap-1.5">
                             <Briefcase className="w-3 h-3 text-indigo-500 shrink-0" />
-                            {row.label}
+                            <span className="truncate">{row.label}</span>
+                            {(() => {
+                              const proj = projects.find(p => p.id === row.projectId);
+                              if (!proj) return null;
+                              const status = getProjectActualStatus(proj);
+                              let dotColor = '';
+                              switch (status) {
+                                case 'In Progress': dotColor = 'bg-emerald-500'; break;
+                                case 'Completed': dotColor = 'bg-blue-500'; break;
+                                case 'Hold': dotColor = 'bg-amber-500'; break;
+                                case 'Rescheduled': dotColor = 'bg-indigo-500'; break;
+                                case 'Cancelled': dotColor = 'bg-rose-500'; break;
+                              }
+                              return (
+                                <span className="flex items-center gap-1 text-[7.5px] font-extrabold uppercase tracking-wide text-slate-500 shrink-0 ml-1" title={status}>
+                                  <span className={cn("w-1.5 h-1.5 rounded-full inline-block shrink-0", dotColor)} />
+                                  {status.replace(/ \(Manual\)/gi, '')}
+                                </span>
+                              );
+                            })()}
                           </h4>
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-[8.5px] font-bold bg-indigo-50 border border-indigo-100/80 text-indigo-700 px-1 rounded uppercase tracking-tighter">

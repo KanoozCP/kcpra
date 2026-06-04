@@ -21,7 +21,7 @@ import {
 import { Assignment, Manpower, Project, ProjectPhase, Craft } from '../types';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
-import { formatToExcelDate } from '../lib/dateUtils';
+import { formatToExcelDate, getProjectActualStatus } from '../lib/dateUtils';
 import { cn } from '../lib/utils';
 
 interface Props {
@@ -41,6 +41,8 @@ export default function AssignmentList({ assignments, manpower, projects, onAuto
   // Collapsed status for Projects & Phases
   const [collapsedProjects, setCollapsedProjects] = useState<Record<string, boolean>>({});
   const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'startDate' | 'status'>('startDate');
 
   // Worker Selection Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -120,7 +122,17 @@ export default function AssignmentList({ assignments, manpower, projects, onAuto
     }
 
     // Check other assignments
-    const conflicts = assignments.filter(a => a.id !== ignoreAssignmentId && a.workerId === worker.id);
+    const conflicts = assignments.filter(a => {
+      if (a.id === ignoreAssignmentId || a.workerId !== worker.id) return false;
+      const otherP = getProject(a.projectId);
+      if (otherP) {
+        const actStatus = getProjectActualStatus(otherP);
+        if (actStatus === 'Hold' || actStatus === 'Cancelled') {
+          return false;
+        }
+      }
+      return true;
+    });
     for (const conf of conflicts) {
       const existingS = dayjs(conf.startDate);
       const existingE = dayjs(conf.endDate);
@@ -262,16 +274,63 @@ export default function AssignmentList({ assignments, manpower, projects, onAuto
     return a.worker.name.localeCompare(b.worker.name);
   });
 
+  const sortedAndFilteredProjects = (() => {
+    const list = projects.filter(p => 
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.code.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (sortBy === 'status') {
+      return [...list].sort((a, b) => {
+        const statusA = getProjectActualStatus(a);
+        const statusB = getProjectActualStatus(b);
+        if (statusA !== statusB) {
+          return statusA.localeCompare(statusB);
+        }
+        return dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf();
+      });
+    } else {
+      return [...list].sort((a, b) => {
+        return dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf();
+      });
+    }
+  })();
+
   return (
     <div className="space-y-6 font-sans">
       {/* Search Header / Config bar */}
-      <div className="bg-white rounded-2xl border border-[#E5E5E5] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-base font-bold text-[#1A1A1A]">Work Breakdown Structure (WBS) Placement</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Hierarchical deployment planning of crews, craft types and schedules</p>
+      <div className="bg-white rounded-2xl border border-[#E5E5E5] p-5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+          <div>
+            <h3 className="text-base font-bold text-[#1A1A1A]">Work Breakdown Structure (WBS) Placement</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Hierarchical deployment planning of crews, craft types and schedules</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1 max-w-lg sm:ml-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search WBS by project..." 
+                className="w-full pl-10 pr-4 py-1.5 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-2.5 py-1.5 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-bold text-slate-705 outline-none focus:ring-2 focus:ring-indigo-100 cursor-pointer"
+              >
+                <option value="startDate">Start Date (Asc)</option>
+                <option value="status">Project Status (Asc) then Start Date</option>
+              </select>
+            </div>
+          </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button 
             onClick={expandAll}
             className="px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl transition-all"
@@ -305,7 +364,7 @@ export default function AssignmentList({ assignments, manpower, projects, onAuto
 
       {/* Main List */}
       <div className="space-y-4">
-        {projects.map(project => {
+        {sortedAndFilteredProjects.map(project => {
           const isProjCollapsed = collapsedProjects[project.id];
           
           // Find requirements and phase grouping
@@ -335,6 +394,35 @@ export default function AssignmentList({ assignments, manpower, projects, onAuto
                         {project.code}
                       </span>
                       <h4 className="text-sm font-bold text-[#1a1a1a] truncate">{project.name}</h4>
+                      {(() => {
+                        const status = getProjectActualStatus(project);
+                        let badgeColor = '';
+                        switch (status) {
+                          case 'In Progress':
+                            badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                            break;
+                          case 'Completed':
+                            badgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+                            break;
+                          case 'Hold':
+                            badgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                            break;
+                          case 'Rescheduled':
+                            badgeColor = 'bg-indigo-50 text-indigo-750 border-indigo-200';
+                            break;
+                          case 'Cancelled':
+                            badgeColor = 'bg-rose-50 text-rose-700 border-rose-200';
+                            break;
+                        }
+                        return (
+                          <span className={cn(
+                            "px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider rounded border shadow-3xs",
+                            badgeColor
+                          )}>
+                            {status}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="text-[10px] text-gray-500 font-medium mt-0.5">{project.location} • {dayjs(project.startDate).format('DD MMM')} — {dayjs(project.endDate).format('DD MMM YY')}</p>
                   </div>

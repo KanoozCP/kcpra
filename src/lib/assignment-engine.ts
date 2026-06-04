@@ -3,6 +3,7 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { Manpower, Project, Assignment, ProjectRequirement } from '../types';
+import { getProjectActualStatus } from './dateUtils';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
@@ -39,8 +40,14 @@ export function runAutoAssignment(
   const newAssignments: Assignment[] = [];
   let assignCounter = 0;
   
+  // Filter out Projects that are on Hold or Cancelled
+  const activeProjects = projects.filter(p => {
+    const act = getProjectActualStatus(p);
+    return act !== 'Hold' && act !== 'Cancelled';
+  });
+
   // Sort projects by earliest start date
-  const sortedProjects = [...projects].sort((a, b) => {
+  const sortedProjects = [...activeProjects].sort((a, b) => {
     const getEarliest = (p: Project) => {
       const validReqs = (p.requirements || []).filter(r => dayjs(r.startDate).isValid());
       if (validReqs.length > 0) {
