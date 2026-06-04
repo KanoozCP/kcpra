@@ -158,7 +158,8 @@ export default function App() {
         const code = err?.code || '';
         const message = err?.message || '';
         const isDomainError = code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain');
-        const isOpenError = code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed');
+        const isOpenError = code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed') ||
+                            code === 'auth/configuration-not-found' || message.includes('configuration-not-found');
         const currentDomain = window.location.hostname;
         
         let activeProjectId = 'spiritual-amplifier-307pf';
@@ -168,29 +169,47 @@ export default function App() {
           }
         } catch (e) {}
 
-        if (isDomainError) {
-          alert(
-            "🔒 Google Auth (Redirect): Unauthorized Client Domain!\n\n" +
-            `Your custom Firebase project (${activeProjectId}) requires the domain "${currentDomain}" to be authorized.\n\n` +
-            "To fix this, please follow these simple steps:\n" +
-            `1. Open Firebase Authentication Settings:\n` +
-            `   https://console.firebase.google.com/project/${activeProjectId}/authentication/settings\n\n` +
-            "2. Find 'Authorized domains' and click 'Add domain'.\n" +
-            `3. Add your current domain:\n` +
-            `   👉 ${currentDomain}\n\n` +
-            "Then return here and connect again!"
-          );
-        } else if (isOpenError) {
-          alert(
-            "🔒 Google Sign-In Method Disabled!\n\n" +
-            `Your custom Firebase project (${activeProjectId}) has not enabled Google as a safe sign-in provider.\n\n` +
-            "How to enable Google Provider (takes 1 minute):\n" +
-            `1. Open project settings provider tab:\n` +
-            `   https://console.firebase.google.com/project/${activeProjectId}/authentication/providers\n\n` +
-            "2. Click the 'Add new provider' button and choose 'Google'.\n" +
-            "3. Toggle 'Enable', specify a support email, and click 'Save'.\n\n" +
-            "Once saved, return here and retry!"
-          );
+        const hasCustomConfig = !!safeLocalStorage.getItem('kanooz_custom_firebase_config');
+
+        if (isDomainError || isOpenError) {
+          if (!hasCustomConfig) {
+            alert(
+              "🔒 Google Drive Backup Setup Required for External Deployments!\n\n" +
+              `You are hosting this app on your own domain "${currentDomain}" but are currently using the default system database.\n\n` +
+              `Because the default Firebase project (${activeProjectId}) is owned by the development sandbox, you do NOT have permission to manage its settings or authorize "${currentDomain}". This is why you see permission/configuration errors.\n\n` +
+              "💡 EASY SOLUTION (Takes 2 Minutes):\n" +
+              "To connect Google Drive sync, you just need to link this interface to your own free Firebase project:\n\n" +
+              "1. Scroll to the bottom of the 'Backup & Sync' tab.\n" +
+              "2. Open 'Custom Firebase Project (Advanced)' and expand 'SHOW ▼'.\n" +
+              "3. Follow the simple steps to create your free project, enable Google auth, and paste your config block here.\n" +
+              "4. Click 'Save & Apply' and you are ready to sync securely!"
+            );
+          } else {
+            if (isDomainError) {
+              alert(
+                "🔒 Google Auth (Redirect): Unauthorized Client Domain!\n\n" +
+                `Your custom Firebase project (${activeProjectId}) requires the domain "${currentDomain}" to be authorized.\n\n` +
+                "To fix this, please follow these simple steps:\n" +
+                `1. Open Firebase Authentication Settings:\n` +
+                `   https://console.firebase.google.com/project/${activeProjectId}/authentication/settings\n\n` +
+                "2. Find 'Authorized domains' and click 'Add domain'.\n" +
+                `3. Add your current domain:\n` +
+                `   👉 ${currentDomain}\n\n` +
+                "Then return here and connect again!"
+              );
+            } else if (isOpenError) {
+              alert(
+                "🔒 Google Sign-In Method Disabled or Not Configured!\n\n" +
+                `Your custom Firebase project (${activeProjectId}) has not enabled Google as a safe sign-in provider, or Google's configuration is missing.\n\n` +
+                "How to enable Google Provider (takes 1 minute):\n" +
+                `1. Open project settings provider tab:\n` +
+                `   https://console.firebase.google.com/project/${activeProjectId}/authentication/providers\n\n` +
+                "2. Click the 'Add new provider' button and choose 'Google'.\n" +
+                "3. Toggle 'Enable', specify a support email, and click 'Save'.\n\n" +
+                "Once saved, return here and retry!"
+              );
+            }
+          }
         } else {
           // If the error indicates a storage or security-sandbox block (common in iframes, incognito, etc),
           // don't show a loud blocking alert on mount to avoid worsening user experience. Just log it.
@@ -400,7 +419,8 @@ export default function App() {
                            code === 'auth/popup-blocked' ||
                            message.includes('popup-blocked');
       const isDomainError = code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain');
-      const isOpenError = code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed');
+      const isOpenError = code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed') ||
+                          code === 'auth/configuration-not-found' || message.includes('configuration-not-found');
       const currentDomain = window.location.hostname;
       
       let activeProjectId = 'spiritual-amplifier-307pf';
@@ -410,44 +430,49 @@ export default function App() {
         }
       } catch (e) {}
       
-      if (isDomainError) {
-        const hasCustomConfig = !!safeLocalStorage.getItem('kanooz_custom_firebase_config');
+      const hasCustomConfig = !!safeLocalStorage.getItem('kanooz_custom_firebase_config');
 
-        if (hasCustomConfig) {
+      if (isDomainError || isOpenError) {
+        if (!hasCustomConfig) {
           alert(
-            "🔒 Google Auth: Unauthorized Client Domain!\n\n" +
-            `Your custom Firebase project (${activeProjectId}) requires the domain "${currentDomain}" to be authorized before signing in.\n\n` +
-            "To resolve this, please follow these simple steps:\n" +
-            `1. Open your own Firebase Console settings page:\n` +
-            `   https://console.firebase.google.com/project/${activeProjectId}/authentication/settings\n\n` +
-            "2. Find the 'Authorized domains' section and click 'Add domain'.\n\n" +
-            "3. Copy and paste your current environment domain:\n" +
-            `   👉 ${currentDomain}\n\n` +
-            "Once registered, refresh the page and try connecting again!"
+            "🔒 Custom Firebase Setup Required for Google Drive on GitHub Pages/External Domains!\n\n" +
+            `You are viewing this app from "${currentDomain}" but are currently using the default Google-owned sandbox project (${activeProjectId}).\n\n` +
+            `Because this default project is owned by the development sandbox, you do NOT have permission to add custom domains to its authorized list. This is why you see permission/configuration errors on GitHub Pages.\n\n` +
+            "💡 EASY SOLUTION (Takes 2 Minutes):\n" +
+            "To connect your Google Drive sync on your own domain, you must link this UI to your own free Firebase project:\n\n" +
+            "1. Scroll to the bottom of the 'Backup & Sync' tab.\n" +
+            "2. Open 'Custom Firebase Project (Advanced)' and expand 'SHOW ▼'.\n" +
+            "3. Follow the simple steps to create your free project, enable Google auth, and paste your config block here.\n" +
+            "4. Click 'Save & Apply' and you are ready to sync your projects securely!"
           );
+          setDriveSyncMessage(`Authentication setup required for: ${currentDomain}`);
         } else {
-          alert(
-            "🔒 Google Auth: Unauthorized Client Domain!\n\n" +
-            `You are viewing this app from the external domain "${currentDomain}" (GitHub Pages or your private deployment).\n\n` +
-            "The system default Firebase project is owned by the development environment, so you do not have permission to manage its authorized domains.\n\n" +
-            "💡 EASY SOLUTION:\n" +
-            "Please paste your OWN custom Firebase project credentials in the 'Developer Firebase Settings' panel below!\n" +
-            "This will let you completely authorize your custom domains and connect to Google Drive perfectly."
-          );
+          if (isDomainError) {
+            alert(
+              "🔒 Google Auth: Unauthorized Client Domain!\n\n" +
+              `Your private Firebase project (${activeProjectId}) requires the domain "${currentDomain}" to be authorized before signing in.\n\n` +
+              "To resolve this, please follow these simple steps:\n" +
+              `1. Open your own Firebase Console settings page:\n` +
+              `   https://console.firebase.google.com/project/${activeProjectId}/authentication/settings\n\n` +
+              "2. Find the 'Authorized domains' section and click 'Add domain'.\n" +
+              "3. Copy and paste your current environment domain:\n" +
+              `   👉 ${currentDomain}\n\n` +
+              "Once registered, refresh the page and try connecting again!"
+            );
+          } else if (isOpenError) {
+            alert(
+              "🔒 Google Sign-In Method Disabled or Not Configured!\n\n" +
+              `Your custom Firebase project (${activeProjectId}) has not enabled Google as a safe sign-in provider yet, or its Google configuration is incomplete.\n\n` +
+              "HOW TO ENABLE GOOGLE PROVIDER (Takes 1 Minute):\n" +
+              `1. Open your Firebase project console directly:\n` +
+              `   https://console.firebase.google.com/project/${activeProjectId}/authentication/providers\n\n` +
+              "2. Click the 'Add new provider' button and select 'Google' from the list.\n" +
+              "3. Toggle the switch to 'Enable', choose a project support email, and click 'Save'.\n\n" +
+              "After saving the Firebase console changes, return here and try connecting again!"
+            );
+          }
+          setDriveSyncMessage('Custom Firebase configuration error.');
         }
-        setDriveSyncMessage(`Unauthorized domain. Please authorize: ${currentDomain}`);
-      } else if (isOpenError) {
-        alert(
-          "🔒 Google Sign-In Method Disabled!\n\n" +
-          `Your custom Firebase project (${activeProjectId}) has not enabled Google as a safe sign-in provider yet.\n\n` +
-          "HOW TO ENABLE GOOGLE PROVIDER (Takes 1 Minute):\n" +
-          `1. Open your Firebase project console directly:\n` +
-          `   https://console.firebase.google.com/project/${activeProjectId}/authentication/providers\n\n` +
-          "2. Click the 'Add new provider' button and select 'Google' from the list.\n" +
-          "3. Toggle the switch to 'Enable', choose a project support email, and click 'Save'.\n\n" +
-          "After saving the Firebase console changes, return here and try connecting again!"
-        );
-        setDriveSyncMessage('Google provider disabled in Firebase.');
       } else if (isPopupError) {
         alert(
           "⚠️ Google Auth Popup Blocked or Closed\n\n" +
@@ -457,7 +482,7 @@ export default function App() {
         );
         setDriveSyncMessage('Popup blocked. Please use Redirect Flow.');
       } else {
-        alert(`Google Connection Failed: ${err.message || 'Check your internet connection or browser settings.'}`);
+        alert(`Google Connection Failed: ${message || 'Check your internet connection or browser settings.'}`);
         setDriveSyncMessage(null);
       }
     } finally {
@@ -472,7 +497,64 @@ export default function App() {
       await googleSignInRedirect();
     } catch (err: any) {
       console.error(err);
-      alert(`Could not start redirect flow: ${err.message || 'Error occurred.'}`);
+      const code = err?.code || '';
+      const message = err?.message || '';
+      const isDomainError = code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain');
+      const isOpenError = code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed') ||
+                          code === 'auth/configuration-not-found' || message.includes('configuration-not-found');
+      
+      let activeProjectId = 'spiritual-amplifier-307pf';
+      try {
+        if (auth && auth.app && auth.app.options) {
+          activeProjectId = auth.app.options.projectId || activeProjectId;
+        }
+      } catch (e) {}
+
+      const hasCustomConfig = !!safeLocalStorage.getItem('kanooz_custom_firebase_config');
+
+      if (isDomainError || isOpenError) {
+        const currentDomain = window.location.hostname;
+        if (!hasCustomConfig) {
+          alert(
+            "🔒 Custom Firebase Setup Required for Google Drive on GitHub Pages/External Domains!\n\n" +
+            `You are viewing this app from "${currentDomain}" but are currently using the default Google-owned sandbox project (${activeProjectId}).\n\n` +
+            `Because this default project is owned by the development sandbox, you do NOT have permission to add custom domains to its authorized list. This is why you see permission/configuration errors on GitHub Pages.\n\n` +
+            "💡 EASY SOLUTION (Takes 2 Minutes):\n" +
+            "To connect your Google Drive sync on your own domain, you must link this UI to your own free Firebase project:\n\n" +
+            "1. Scroll to the bottom of the 'Backup & Sync' tab.\n" +
+            "2. Open 'Custom Firebase Project (Advanced)' and expand 'SHOW ▼'.\n" +
+            "3. Follow the simple steps to create your free project, enable Google auth, and paste your config block here.\n" +
+            "4. Click 'Save & Apply' and you are ready to sync your projects securely!"
+          );
+        } else {
+          if (isDomainError) {
+            alert(
+              "🔒 Google Auth (Redirect): Unauthorized Client Domain!\n\n" +
+              `Your custom Firebase project (${activeProjectId}) requires the domain "${currentDomain}" to be authorized before signing in.\n\n` +
+              "To resolve this, please follow these simple steps:\n" +
+              `1. Open your own Firebase Console settings page:\n` +
+              `   https://console.firebase.google.com/project/${activeProjectId}/authentication/settings\n\n` +
+              "2. Find the 'Authorized domains' section and click 'Add domain'.\n\n" +
+              "3. Copy and paste your current environment domain:\n" +
+              `   👉 ${currentDomain}\n\n` +
+              "Once registered, refresh the page and try connecting again!"
+            );
+          } else if (isOpenError) {
+            alert(
+              "🔒 Google Sign-In Method Disabled or Not Configured!\n\n" +
+              `Your custom Firebase project (${activeProjectId}) has not enabled Google as a safe sign-in provider yet, or its Google configuration is incomplete.\n\n` +
+              "HOW TO ENABLE GOOGLE PROVIDER (Takes 1 Minute):\n" +
+              `1. Open your Firebase project console directly:\n` +
+              `   https://console.firebase.google.com/project/${activeProjectId}/authentication/providers\n\n` +
+              "2. Click the 'Add new provider' button and select 'Google' from the list.\n" +
+              "3. Toggle the switch to 'Enable', choose a project support email, and click 'Save'.\n\n" +
+              "After saving the Firebase console changes, return here and try connecting again!"
+            );
+          }
+        }
+      } else {
+        alert(`Could not start redirect flow: ${message || 'Error occurred.'}`);
+      }
       setIsDriveSyncing(false);
       setDriveSyncMessage(null);
     }
@@ -1194,13 +1276,21 @@ export default function App() {
                               </div>
 
                               <div className="text-[9.5px] bg-amber-50 rounded-lg p-3 border border-amber-100 text-slate-600 leading-normal space-y-1.5">
-                                <span className="font-bold text-amber-900 block">💡 Standard Setup Steps:</span>
+                                <span className="font-bold text-amber-900 block">💡 1-Minute Custom Firebase Setup Guide:</span>
+                                <p className="text-[9.5px] text-slate-500 italic pb-1">
+                                  Because this app is running on your custom domain (<code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-bold">{window.location.hostname}</code>), you must link it to your own free Firebase project. You cannot change settings on the system default project as you do not own it.
+                                </p>
                                 <ol className="list-decimal pl-4.5 space-y-1 text-slate-500">
-                                  <li>Create a project on <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">firebase.google.com</a>.</li>
-                                  <li>Click <b>Authentication</b> and enable <b>Google Sign-In</b> under Sign-in providers.</li>
-                                  <li>In Authentication settings &gt; <b>Authorized domains</b>, click "Add domain" and add <code>{window.location.hostname}</code>.</li>
-                                  <li>In Project Settings &gt; General &gt; Web apps, create a web app and copy its config block value directly here.</li>
+                                  <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">Firebase Console ↗</a> and click <b>"Add project"</b> to create a free Firebase project.</li>
+                                  <li>In your new project, click <b>Authentication</b> in the left sidebar, click <b>Get Started</b>, and enable <b>Google</b> under the Sign-in providers (be sure to select a support email and click Save).</li>
+                                  <li>Go to <b>Authentication &gt; Settings</b> tab (next to Sign-in method). Scroll down to <b>Authorized domains</b>, click "Add domain", and copy-paste your exact domain: <code className="bg-slate-200/80 px-1 rounded font-bold text-slate-700">{window.location.hostname}</code>.</li>
+                                  <li>Click the gear icon next to "Project Overview" in the top-left &gt; <b>Project settings</b>.</li>
+                                  <li>In <b>General &gt; Web apps</b>, click the <code>&lt;/&gt;</code> (Web App) icon, enter any nickname, and register the app.</li>
+                                  <li>Copy the <code>firebaseConfig</code> JSON block from the screen and paste it into the textarea above, then click <b>Save & Apply</b>!</li>
                                 </ol>
+                                <p className="text-[9px] text-[#b33a3a] font-semibold mt-2.5 bg-red-50/50 border border-red-100 p-2 rounded">
+                                  ⚠️ <b>Important:</b> If you try to organize settings using the default App Config (spiritual-amplifier-307pf), Google Console will block you with a <i>"To manage settings, ask a project owner"</i> message. Rest assured, creating your own project is 100% free and completely bypassed this block!
+                                </p>
                               </div>
                             </div>
                           )}
