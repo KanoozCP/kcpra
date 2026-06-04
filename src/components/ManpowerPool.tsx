@@ -546,65 +546,68 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F9FAFB] border-b border-[#E5E5E5]">
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Badge & Name</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Passport / Iqama</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Craft Trade</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Skill Rating</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Contract period</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Vacation period</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider text-right">Actions</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Badge & Name</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Passport / Iqama</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Craft Trade</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Skill Rating</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contract period</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vacation period</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#F0F0F0]">
+          <tbody className="divide-y divide-[#F2F2F2]">
             {filteredAndSorted.map((m) => {
               const isDuplicate = badgeCounts[m.badgeNo] > 1;
               const isEditing = editingId === m.id;
               
               if (isEditing) {
                 return (
-                  <tr key={m.id} className="bg-indigo-50/50">
-                    <td className="px-4 py-2.5">
-                      <div className="space-y-1">
+                  <tr key={m.id} className="bg-indigo-50/40">
+                    <td className="px-5 py-3">
+                      <div className="space-y-1.5 max-w-[200px]">
                         <input 
-                          className="w-full px-2 py-1 text-xs border rounded" 
+                          className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-medium outline-hidden" 
                           value={m.name} 
                           onChange={e => updateWorkerField({...m, name: e.target.value})}
+                          placeholder="Worker Name"
                         />
                         <input 
-                          className="w-full px-2 py-0.5 text-[10px] border rounded" 
+                          className="w-full px-2.5 py-1 text-[11px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-semibold font-mono outline-hidden" 
                           value={m.badgeNo} 
                           onChange={e => updateWorkerField({...m, badgeNo: e.target.value})}
+                          placeholder="Badge No"
                         />
                       </div>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <input 
-                        className="w-full px-2 py-1 text-xs border rounded" 
+                        className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-medium outline-hidden" 
                         value={m.passportIqama || ''} 
                         onChange={e => updateWorkerField({...m, passportIqama: e.target.value})}
-                        placeholder="Passport / Iqama"
+                        placeholder="Passport/Iqama"
                       />
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <input 
-                        className="w-full px-2 py-1 text-xs border rounded" 
+                        className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-bold outline-hidden" 
                         value={m.craft} 
                         onChange={e => updateWorkerField({...m, craft: e.target.value})}
+                        placeholder="Craft Trade"
                       />
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <select 
-                        className="w-full px-2 py-1 text-xs border rounded bg-white" 
+                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded-lg bg-white font-semibold text-slate-700 outline-hidden" 
                         value={m.employmentType} 
                         onChange={e => updateWorkerField({...m, employmentType: e.target.value as EmploymentType})}
                       >
                         {EMPLOYMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <select
-                        className="w-full px-2 py-1 text-xs border rounded bg-white font-semibold text-slate-800"
+                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded-lg bg-white font-extrabold text-slate-700 outline-hidden"
                         value={m.strength || 'Good'}
                         onChange={e => updateWorkerField({...m, strength: e.target.value as any})}
                       >
@@ -613,41 +616,57 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                         <option value="Average">Average</option>
                       </select>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <div className="space-y-1">
-                        <input 
-                          type="date" 
-                          className="w-full px-2 py-0.5 text-[10px] border rounded" 
-                          value={m.joinDate} 
-                          onChange={e => updateWorkerField({...m, joinDate: e.target.value})}
-                        />
-                        <input 
-                          type="date" 
-                          className="w-full px-2 py-0.5 text-[10px] border rounded" 
-                          value={m.releaseDate} 
-                          onChange={e => updateWorkerField({...m, releaseDate: e.target.value})}
-                        />
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">Start:</span>
+                          <input 
+                            type="date" 
+                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            value={m.joinDate} 
+                            onChange={e => updateWorkerField({...m, joinDate: e.target.value})}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">End:</span>
+                          <input 
+                            type="date" 
+                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            value={m.releaseDate} 
+                            onChange={e => updateWorkerField({...m, releaseDate: e.target.value})}
+                          />
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <div className="space-y-1">
-                        <input 
-                          type="date" 
-                          className="w-full px-2 py-0.5 text-[10px] border rounded" 
-                          value={m.vacationStart || ''} 
-                          onChange={e => updateWorkerField({...m, vacationStart: e.target.value})}
-                        />
-                        <input 
-                          type="date" 
-                          className="w-full px-2 py-0.5 text-[10px] border rounded" 
-                          value={m.vacationEnd || ''} 
-                          onChange={e => updateWorkerField({...m, vacationEnd: e.target.value})}
-                        />
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">Start:</span>
+                          <input 
+                            type="date" 
+                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            value={m.vacationStart || ''} 
+                            onChange={e => updateWorkerField({...m, vacationStart: e.target.value})}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">End:</span>
+                          <input 
+                            type="date" 
+                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            value={m.vacationEnd || ''} 
+                            onChange={e => updateWorkerField({...m, vacationEnd: e.target.value})}
+                          />
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <button onClick={() => setEditingId(null)} className="p-1.5 text-indigo-600 hover:bg-white rounded-lg">
+                    <td className="px-5 py-3 text-right">
+                      <button 
+                        onClick={() => setEditingId(null)} 
+                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer border border-indigo-150 shadow-3xs flex items-center gap-1.5 text-[11px] font-bold ml-auto"
+                      >
                         <Save className="w-3.5 h-3.5" />
+                        Save
                       </button>
                     </td>
                   </tr>
@@ -655,87 +674,81 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
               }
 
               return (
-                <tr key={m.id} className={cn("hover:bg-indigo-50/30 transition-colors group", isDuplicate && "bg-red-50/50")}>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[10px]",
-                        isDuplicate ? "bg-red-500" : "bg-indigo-600"
+                <tr key={m.id} className={cn("hover:bg-slate-50/60 transition-colors group", isDuplicate && "bg-red-50/30")}>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-[10px] font-bold tracking-tight",
+                        isDuplicate ? "bg-red-105 text-red-700 border border-red-200" : "bg-slate-100 text-slate-705"
                       )}>
-                        {m.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-bold text-[#1A1A1A]">{m.name}</p>
-                          {isDuplicate && <AlertCircle className="w-3 h-3 text-red-500" title="Duplicate Badge Number" />}
-                        </div>
-                        <p className={cn("text-[10px] font-bold", isDuplicate ? "text-red-600" : "text-[#888]")}>{m.badgeNo}</p>
+                        #{m.badgeNo}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="text-xs font-bold text-[#1A1A1A]">{m.name}</div>
+                        {isDuplicate && <AlertCircle className="w-3.5 h-3.5 text-red-500 animate-pulse" title="Duplicate Badge Number" />}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-[10px] font-semibold text-[#444]">{m.passportIqama || '--'}</span>
+                  <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
+                    {m.passportIqama || <span className="text-slate-350 italic text-[11px]">—</span>}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-0.5 bg-[#EEF2FF] text-indigo-700 text-[9px] font-bold uppercase rounded border border-indigo-100 w-fit block text-center">
+                  <td className="px-5 py-3.5">
+                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-150 rounded px-2 py-0.5 text-[10px] font-bold tracking-tight block w-fit">
                       {m.craft}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-[10px] font-semibold text-[#666]">{m.employmentType}</span>
+                  <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
+                    {m.employmentType}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={cn(
-                      "px-1.5 py-0.5 text-[9px] font-bold rounded border w-fit uppercase tracking-wider block text-center",
-                      (m.strength || 'Good') === 'Excellent' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                      (m.strength || 'Good') === 'Average' ? 'bg-amber-50 text-amber-700 border-amber-205' :
-                      'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    )}>
+                  <td className="px-5 py-3.5 text-center">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold shadow-3xs border block w-fit mx-auto ${
+                      m.strength === 'Excellent' ? 'bg-purple-50 text-purple-700 border-purple-150' :
+                      m.strength === 'Average' ? 'bg-amber-50 text-amber-700 border-amber-150' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-150'
+                    }`}>
                       {m.strength || 'Good'}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="text-[10px] font-bold text-[#444]">
-                      {dayjs(m.joinDate).format('DD MMM YY')} — {dayjs(m.releaseDate).format('DD MMM YY')}
-                    </div>
+                  <td className="px-5 py-3.5 text-xs text-slate-500 font-semibold font-mono">
+                    {dayjs(m.joinDate).format('DD-MMM-YY')} — {dayjs(m.releaseDate).format('DD-MMM-YY')}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5">
                     {m.vacationStart ? (
-                      <div className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                        {dayjs(m.vacationStart).format('DD MMM')} — {dayjs(m.vacationEnd).format('DD MMM YY')}
+                      <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded border border-orange-100 w-fit font-mono">
+                        {dayjs(m.vacationStart).format('DD-MMM')} — {dayjs(m.vacationEnd).format('DD-MMM-YY')}
                       </div>
                     ) : (
-                      <span className="text-[9px] text-[#AAA] font-medium italic">No vacation set</span>
+                      <span className="text-[10px] text-slate-400 font-medium italic">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1 text-xs">
+                  <td className="px-5 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5 text-xs">
                       {confirmDeleteId === m.id ? (
                         <>
                           <button 
                             onClick={() => deleteWorker(m.id)}
-                            className="px-2 py-0.5 bg-red-500 text-white rounded text-[9px] font-bold hover:bg-red-600 transition-colors"
+                            className="px-2.5 py-1 bg-red-600 text-white rounded text-[10px] font-bold hover:bg-red-750 transition-colors shadow-3xs border border-red-200"
                           >
                             Confirm
                           </button>
                           <button 
                             onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded text-[9px] font-bold hover:bg-gray-300 transition-colors"
+                            className="px-2.5 py-1 bg-white border border-slate-200 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors shadow-3xs"
                           >
                             Cancel
                           </button>
                         </>
                       ) : (
-                        <div className="flex items-center gap-0.5">
-                          <button onClick={() => setEditingId(m.id)} className="p-1.5 text-[#888] hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
-                            <Edit2 className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setEditingId(m.id)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
+                            <Edit2 className="w-4 h-4" />
                           </button>
                           <button 
                             onClick={() => setConfirmDeleteId(m.id)}
-                            className="p-1.5 text-[#888] hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                             title="Delete"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       )}
