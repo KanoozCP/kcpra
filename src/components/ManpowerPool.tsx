@@ -738,13 +738,29 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                       {m.strength || 'Good'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-500 font-semibold font-mono">
-                    {dayjs(m.joinDate).format('DD-MMM-YY')} — {dayjs(m.releaseDate).format('DD-MMM-YY')}
+                  <td className="px-5 py-3.5">
+                    <div className="flex flex-col gap-0.5 font-mono">
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase w-8">Start:</span>
+                        <span>{dayjs(m.joinDate).format('DD-MMM-YY')}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase w-8">End:</span>
+                        <span>{dayjs(m.releaseDate).format('DD-MMM-YY')}</span>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-5 py-3.5">
                     {m.vacationStart ? (
-                      <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded border border-orange-100 w-fit font-mono">
-                        {dayjs(m.vacationStart).format('DD-MMM')} — {dayjs(m.vacationEnd).format('DD-MMM-YY')}
+                      <div className="flex flex-col gap-0.5 font-mono">
+                        <div className="flex items-center gap-1.5 text-[10px] text-orange-600 font-bold">
+                          <span className="text-[9px] text-orange-400 font-bold uppercase w-8">Start:</span>
+                          <span>{dayjs(m.vacationStart).format('DD-MMM-YY')}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-orange-600 font-bold">
+                          <span className="text-[9px] text-orange-400 font-bold uppercase w-8">End:</span>
+                          <span>{dayjs(m.vacationEnd).format('DD-MMM-YY')}</span>
+                        </div>
                       </div>
                     ) : (
                       <span className="text-[10px] text-slate-400 font-medium italic">—</span>
