@@ -24,8 +24,27 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'badgeNo' | 'craft' | 'joinDate'>('name');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [originalWorkerState, setOriginalWorkerState] = useState<Manpower | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleStartEdit = (worker: Manpower) => {
+    setEditingId(worker.id);
+    setOriginalWorkerState({ ...worker });
+  };
+
+  const handleCancelEdit = () => {
+    if (originalWorkerState) {
+      setManpower(manpower.map(m => m.id === originalWorkerState.id ? originalWorkerState : m));
+    }
+    setEditingId(null);
+    setOriginalWorkerState(null);
+  };
+
+  const handleSaveEdit = () => {
+    setEditingId(null);
+    setOriginalWorkerState(null);
+  };
 
   // Google Drive state hooks
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
@@ -543,17 +562,17 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
 
 
       <div className="flex-1 overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse min-w-[1240px]">
           <thead>
             <tr className="bg-[#F9FAFB] border-b border-[#E5E5E5]">
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Badge & Name</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Passport / Iqama</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Craft Trade</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Skill Rating</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contract period</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vacation period</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Badge & Name</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[150px]">Passport / Iqama</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[180px]">Craft Trade</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[110px]">Type</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center min-w-[110px]">Skill Rating</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Contract period</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Vacation period</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right min-w-[130px]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F2F2F2]">
@@ -661,13 +680,23 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <button 
-                        onClick={() => setEditingId(null)} 
-                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer border border-indigo-150 shadow-3xs flex items-center gap-1.5 text-[11px] font-bold ml-auto"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        Save
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5 min-w-[125px]">
+                        <button 
+                          onClick={handleSaveEdit} 
+                          className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-3xs flex items-center gap-1.5 cursor-pointer border border-indigo-200"
+                          title="Save changes"
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          Save
+                        </button>
+                        <button 
+                          onClick={handleCancelEdit} 
+                          className="px-2.5 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-3xs"
+                          title="Discard changes"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -740,7 +769,7 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                         </>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <button onClick={() => setEditingId(m.id)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
+                          <button onClick={() => handleStartEdit(m)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button 
