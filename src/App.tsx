@@ -155,12 +155,18 @@ export default function App() {
         }
       } catch (err: any) {
         console.error('Redirect result exception:', err);
-        const isDomainError = err.code === 'auth/unauthorized-domain' || 
-                              (err.message && err.message.includes('unauthorized-domain'));
-        const isOpenError = err.code === 'auth/operation-not-allowed' || 
-                            (err.message && err.message.includes('operation-not-allowed'));
+        const code = err?.code || '';
+        const message = err?.message || '';
+        const isDomainError = code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain');
+        const isOpenError = code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed');
         const currentDomain = window.location.hostname;
-        const activeProjectId = auth.app.options.projectId || 'spiritual-amplifier-307pf';
+        
+        let activeProjectId = 'spiritual-amplifier-307pf';
+        try {
+          if (auth && auth.app && auth.app.options) {
+            activeProjectId = auth.app.options.projectId || activeProjectId;
+          }
+        } catch (e) {}
 
         if (isDomainError) {
           alert(
@@ -186,7 +192,12 @@ export default function App() {
             "Once saved, return here and retry!"
           );
         } else {
-          alert(`Google Redirect Login Failed: ${err.message || 'Please check your configurations.'}`);
+          // If the error indicates a storage or security-sandbox block (common in iframes, incognito, etc),
+          // don't show a loud blocking alert on mount to avoid worsening user experience. Just log it.
+          const isStorageIssue = message.includes('storage') || message.includes('SecurityError') || code.includes('storage');
+          if (!isStorageIssue) {
+            alert(`Google Redirect Login Failed: ${message || 'Please check your configurations.'}`);
+          }
         }
       }
     };
@@ -225,10 +236,17 @@ export default function App() {
 
     const saved = safeLocalStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      setManpower(parsed.manpower || []);
-      setProjects(parsed.projects || []);
-      setAssignments(parsed.assignments || []);
+      try {
+        const parsed = JSON.parse(saved);
+        setManpower(parsed.manpower || []);
+        setProjects(parsed.projects || []);
+        setAssignments(parsed.assignments || []);
+      } catch (err) {
+        console.error('Failed to parse saved localStorage planning data:', err);
+        setManpower([]);
+        setProjects([]);
+        setAssignments([]);
+      }
     }
   }, []);
 
@@ -375,16 +393,22 @@ export default function App() {
       }
     } catch (err: any) {
       console.error(err);
-      const isPopupError = err.code === 'auth/popup-closed-by-user' || 
-                           (err.message && err.message.includes('popup-closed-by-user')) ||
-                           err.code === 'auth/popup-blocked' ||
-                           (err.message && err.message.includes('popup-blocked'));
-      const isDomainError = err.code === 'auth/unauthorized-domain' || 
-                            (err.message && err.message.includes('unauthorized-domain'));
-      const isOpenError = err.code === 'auth/operation-not-allowed' || 
-                          (err.message && err.message.includes('operation-not-allowed'));
-      const activeProjectId = auth.app.options.projectId || 'spiritual-amplifier-307pf';
+      const code = err?.code || '';
+      const message = err?.message || '';
+      const isPopupError = code === 'auth/popup-closed-by-user' || 
+                           message.includes('popup-closed-by-user') ||
+                           code === 'auth/popup-blocked' ||
+                           message.includes('popup-blocked');
+      const isDomainError = code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain');
+      const isOpenError = code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed');
       const currentDomain = window.location.hostname;
+      
+      let activeProjectId = 'spiritual-amplifier-307pf';
+      try {
+        if (auth && auth.app && auth.app.options) {
+          activeProjectId = auth.app.options.projectId || activeProjectId;
+        }
+      } catch (e) {}
       
       if (isDomainError) {
         const hasCustomConfig = !!safeLocalStorage.getItem('kanooz_custom_firebase_config');

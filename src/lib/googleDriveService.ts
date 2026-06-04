@@ -45,9 +45,27 @@ const getActiveConfig = () => {
 
 const activeConfig = getActiveConfig();
 
-// Initialize the app cleanly
-const app = getApps().length === 0 ? initializeApp(activeConfig) : getApp();
-export const auth = getAuth(app);
+let app: any = null;
+let resolvedAuth: any = null;
+
+try {
+  // Initialize the app cleanly
+  app = getApps().length === 0 ? initializeApp(activeConfig) : getApp();
+  resolvedAuth = getAuth(app);
+} catch (e) {
+  console.error('Firebase initialization error gracefully handled to avoid page crash:', e);
+  resolvedAuth = {
+    app: {
+      options: activeConfig
+    },
+    signOut: async () => {},
+    onAuthStateChanged: (cb: any) => {
+      return () => {};
+    }
+  };
+}
+
+export const auth = resolvedAuth;
 
 const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/drive');
@@ -60,24 +78,35 @@ export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
 ) => {
-  return onAuthStateChanged(auth, async (user: User | null) => {
-    if (user) {
-      const storedToken = safeLocalStorage.getItem('kanooz_google_drive_token');
-      if (storedToken) {
-        cachedAccessToken = storedToken;
-        if (onAuthSuccess) onAuthSuccess(user, storedToken);
-      } else if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else if (!isSigningIn) {
+  try {
+    // If we have a mock auth object, use its custom listener
+    if (auth && typeof auth.onAuthStateChanged === 'function' && !('currentUser' in auth)) {
+      if (onAuthFailure) onAuthFailure();
+      return auth.onAuthStateChanged(() => {});
+    }
+    return onAuthStateChanged(auth, async (user: User | null) => {
+      if (user) {
+        const storedToken = safeLocalStorage.getItem('kanooz_google_drive_token');
+        if (storedToken) {
+          cachedAccessToken = storedToken;
+          if (onAuthSuccess) onAuthSuccess(user, storedToken);
+        } else if (cachedAccessToken) {
+          if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
+        } else if (!isSigningIn) {
+          cachedAccessToken = null;
+          if (onAuthFailure) onAuthFailure();
+        }
+      } else {
         cachedAccessToken = null;
+        safeLocalStorage.removeItem('kanooz_google_drive_token');
         if (onAuthFailure) onAuthFailure();
       }
-    } else {
-      cachedAccessToken = null;
-      safeLocalStorage.removeItem('kanooz_google_drive_token');
-      if (onAuthFailure) onAuthFailure();
-    }
-  });
+    });
+  } catch (e) {
+    console.error('onAuthStateChanged error handled safely:', e);
+    if (onAuthFailure) onAuthFailure();
+    return () => {};
+  }
 };
 
 // Initiate Google authentication via popup web flow
