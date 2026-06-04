@@ -546,12 +546,13 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F9FAFB] border-b border-[#E5E5E5]">
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Worker Details</th>
+              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Badge & Name</th>
               <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Passport / Iqama</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Craft Info</th>
+              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Craft Trade</th>
               <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Contract Period</th>
-              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Vacation</th>
+              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Skill Rating</th>
+              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Contract period</th>
+              <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider">Vacation period</th>
               <th className="px-4 py-3 text-[10px] font-bold text-[#888] uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
@@ -586,22 +587,11 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                       />
                     </td>
                     <td className="px-4 py-2.5">
-                      <div className="space-y-1">
-                        <input 
-                          className="w-full px-2 py-1 text-xs border rounded" 
-                          value={m.craft} 
-                          onChange={e => updateWorkerField({...m, craft: e.target.value})}
-                        />
-                        <select
-                          className="w-full px-2 py-1 text-[10px] border rounded bg-white font-semibold text-slate-800"
-                          value={m.strength || 'Good'}
-                          onChange={e => updateWorkerField({...m, strength: e.target.value as any})}
-                        >
-                          <option value="Excellent">Excellent</option>
-                          <option value="Good">Good</option>
-                          <option value="Average">Average</option>
-                        </select>
-                      </div>
+                      <input 
+                        className="w-full px-2 py-1 text-xs border rounded" 
+                        value={m.craft} 
+                        onChange={e => updateWorkerField({...m, craft: e.target.value})}
+                      />
                     </td>
                     <td className="px-4 py-2.5">
                       <select 
@@ -610,6 +600,17 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                         onChange={e => updateWorkerField({...m, employmentType: e.target.value as EmploymentType})}
                       >
                         {EMPLOYMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <select
+                        className="w-full px-2 py-1 text-xs border rounded bg-white font-semibold text-slate-800"
+                        value={m.strength || 'Good'}
+                        onChange={e => updateWorkerField({...m, strength: e.target.value as any})}
+                      >
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good">Good</option>
+                        <option value="Average">Average</option>
                       </select>
                     </td>
                     <td className="px-4 py-2.5">
@@ -676,22 +677,22 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                     <span className="text-[10px] font-semibold text-[#444]">{m.passportIqama || '--'}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-col gap-1">
-                      <span className="px-2 py-0.5 bg-[#EEF2FF] text-indigo-700 text-[9px] font-bold uppercase rounded border border-indigo-100 w-fit">
-                        {m.craft}
-                      </span>
-                      <span className={cn(
-                        "px-1.5 py-0.5 text-[9px] font-bold rounded border w-fit uppercase tracking-wider",
-                        (m.strength || 'Good') === 'Excellent' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                        (m.strength || 'Good') === 'Average' ? 'bg-amber-50 text-amber-700 border-amber-205' :
-                        'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      )}>
-                        {m.strength || 'Good'}
-                      </span>
-                    </div>
+                    <span className="px-2 py-0.5 bg-[#EEF2FF] text-indigo-700 text-[9px] font-bold uppercase rounded border border-indigo-100 w-fit block text-center">
+                      {m.craft}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-[10px] font-semibold text-[#666]">{m.employmentType}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={cn(
+                      "px-1.5 py-0.5 text-[9px] font-bold rounded border w-fit uppercase tracking-wider block text-center",
+                      (m.strength || 'Good') === 'Excellent' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      (m.strength || 'Good') === 'Average' ? 'bg-amber-50 text-amber-700 border-amber-205' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    )}>
+                      {m.strength || 'Good'}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-[10px] font-bold text-[#444]">
