@@ -1287,6 +1287,7 @@ export default function App() {
                                   <li>Click the gear icon next to "Project Overview" in the top-left &gt; <b>Project settings</b>.</li>
                                   <li>In <b>General &gt; Web apps</b>, click the <code>&lt;/&gt;</code> (Web App) icon, enter any nickname, and register the app.</li>
                                   <li>Copy the <code>firebaseConfig</code> JSON block from the screen and paste it into the textarea above, then click <b>Save & Apply</b>!</li>
+                                  <li>🌍 <b>Enable Google Drive API:</b> To authorize Google Drive uploads/downloads, visit the <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">Google Cloud API Library ↗</a>, select your newly created Firebase project in the top-left dropdown, and click <b>"Enable"</b>.</li>
                                 </ol>
                                 <p className="text-[9px] text-[#b33a3a] font-semibold mt-2.5 bg-red-50/50 border border-red-100 p-2 rounded">
                                   ⚠️ <b>Important:</b> If you try to organize settings using the default App Config (spiritual-amplifier-307pf), Google Console will block you with a <i>"To manage settings, ask a project owner"</i> message. Rest assured, creating your own project is 100% free and completely bypassed this block!

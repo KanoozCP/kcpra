@@ -169,6 +169,46 @@ export const logout = async () => {
 const BACKUP_FILENAME = 'Kanooz_Master_Planning_Backup.json';
 
 /**
+ * Enhanced Google Drive response error parser and handler.
+ * Provides a user-friendly error description if the Google Drive API is disabled on a custom project.
+ */
+async function handleResponseError(res: Response, fallbackPrefix: string): Promise<never> {
+  const errText = await res.text();
+  let parsedMsg = '';
+  try {
+    const json = JSON.parse(errText);
+    if (json?.error?.message) {
+      parsedMsg = json.error.message;
+    }
+  } catch (e) {}
+
+  const finalMsg = parsedMsg || errText;
+
+  if (
+    finalMsg.includes('Google Drive API has not been used') || 
+    finalMsg.includes('drive.googleapis.com/overview') ||
+    errText.includes('Google Drive API has not been used') ||
+    errText.includes('drive.googleapis.com/overview')
+  ) {
+    // Attempt to extract the project number
+    const projMatch = finalMsg.match(/project=(\d+)/) || errText.match(/project=(\d+)/) || finalMsg.match(/project_number:(\d+)/);
+    const projectIdOrNum = projMatch ? projMatch[1] : '';
+    const enableUrl = projectIdOrNum 
+      ? `https://console.cloud.google.com/apis/library/drive.googleapis.com?project=${projectIdOrNum}`
+      : 'https://console.cloud.google.com/apis/library/drive.googleapis.com';
+    
+    throw new Error(
+      `🔒 Google Drive API is disabled or not activated in your private Firebase/Google Cloud project!\n\n` +
+      `To resolve this, please open the following official link in a new tab to enable it (ensure you are logged in using the owner account):\n\n` +
+      `👉 ${enableUrl}\n\n` +
+      `Simply click the "Enable" button, wait 1-2 minutes for Google's systems to sync, then try uploading or restoring files again!`
+    );
+  }
+
+  throw new Error(`${fallbackPrefix}: ${finalMsg}`);
+}
+
+/**
  * Searches for the specific backup file in the user's Google Drive.
  */
 async function findBackupFile(token: string): Promise<string | null> {
@@ -180,8 +220,7 @@ async function findBackupFile(token: string): Promise<string | null> {
   });
   
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Google Drive Search failed: ${errText}`);
+    await handleResponseError(response, 'Google Drive Search failed');
   }
   
   const data = await response.json();
@@ -216,8 +255,7 @@ export const saveToDrive = async (payload: any): Promise<{ id: string; name: str
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Google Drive write/overwrite failed: ${errText}`);
+      await handleResponseError(res, 'Google Drive write/overwrite failed');
     }
 
     return { id: fileId, name: BACKUP_FILENAME, updated: true };
@@ -236,8 +274,7 @@ export const saveToDrive = async (payload: any): Promise<{ id: string; name: str
     });
 
     if (!createRes.ok) {
-      const errText = await createRes.text();
-      throw new Error(`Google Drive metadata initialization failed: ${errText}`);
+      await handleResponseError(createRes, 'Google Drive metadata initialization failed');
     }
 
     const fileMeta = await createRes.json();
@@ -254,8 +291,7 @@ export const saveToDrive = async (payload: any): Promise<{ id: string; name: str
     });
 
     if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      throw new Error(`Google Drive content populate failed: ${errText}`);
+      await handleResponseError(uploadRes, 'Google Drive content populate failed');
     }
 
     return { id: newFileId, name: BACKUP_FILENAME, updated: false };
@@ -283,8 +319,7 @@ export const loadFromDrive = async (): Promise<any | null> => {
   });
 
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Google Drive file retrieve failed: ${errText}`);
+    await handleResponseError(res, 'Google Drive file retrieve failed');
   }
 
   return await res.json();
@@ -308,8 +343,7 @@ export const listDriveFiles = async (): Promise<Array<{ id: string; name: string
   });
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Google Drive list failed: ${errText}`);
+    await handleResponseError(response, 'Google Drive list failed');
   }
 
   const data = await response.json();
@@ -332,8 +366,7 @@ export const downloadFileFromDrive = async (fileId: string): Promise<ArrayBuffer
   });
 
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Google Drive file retrieve failed: ${errText}`);
+    await handleResponseError(res, 'Google Drive file retrieve failed');
   }
 
   return await res.arrayBuffer();
@@ -366,8 +399,7 @@ export const uploadCustomFileToDrive = async (
   });
 
   if (!createRes.ok) {
-    const errText = await createRes.text();
-    throw new Error(`Google Drive file metadata creation failed: ${errText}`);
+    await handleResponseError(createRes, 'Google Drive file metadata creation failed');
   }
 
   const fileMeta = await createRes.json();
@@ -384,8 +416,7 @@ export const uploadCustomFileToDrive = async (
   });
 
   if (!uploadRes.ok) {
-    const errText = await uploadRes.text();
-    throw new Error(`Google Drive content upload failed: ${errText}`);
+    await handleResponseError(uploadRes, 'Google Drive content upload failed');
   }
 
   return { id: fileId, name: fileName };
