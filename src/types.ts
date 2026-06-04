@@ -58,5 +58,6 @@ export enum Tab {
   ASSIGNMENTS = 'assignments',
   GANTT = 'gantt',
   SHORTAGE = 'shortage',
+  UNASSIGNED = 'unassigned',
   REPORTS = 'reports'
 }

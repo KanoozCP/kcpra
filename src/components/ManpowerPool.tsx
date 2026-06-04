@@ -479,72 +479,68 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm overflow-hidden min-h-[600px] flex flex-col">
-      <div className="p-6 border-b border-[#E5E5E5] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-xl">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#888]" />
+      <div className="bg-white rounded-2xl border border-[#E5E5E5] p-5 shadow-sm flex flex-col gap-4 mb-6">
+        <div>
+          <h3 className="text-base font-bold text-[#1A1A1A]">Manpower Pool</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Active workforce registry, qualifications, and mobilization status</p>
+        </div>
+        
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-t border-slate-100 pt-3">
+          <div className="relative flex-1 min-w-[200px] max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
               type="text" 
               placeholder="Search by name, badge, or craft..." 
-              className="w-full pl-10 pr-4 py-2 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-1.5 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block leading-none">Sort:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 cursor-pointer shadow-3xs"
-            >
-              <option value="name">Name (A-Z)</option>
-              <option value="badgeNo">Badge Number</option>
-              <option value="craft">Craft (A-Z)</option>
-              <option value="joinDate">Join Date (Asc)</option>
-            </select>
+          
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block leading-none">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-2.5 py-1.5 bg-white border border-[#E5E5E5] rounded-xl text-[11px] font-bold text-[#333] outline-none cursor-pointer hover:bg-slate-50"
+              >
+                <option value="name">Name (A-Z)</option>
+                <option value="badgeNo">Badge Number</option>
+                <option value="craft">Craft (A-Z)</option>
+                <option value="joinDate">Join Date (Asc)</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-1.5 shrink-0">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImport} 
+                className="hidden" 
+                accept=".xlsx,.xls" 
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 border border-indigo-100 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Import Excel
+              </button>
+              <button 
+                onClick={handleExport}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-650 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export Excel
+              </button>
+            </div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleImport} 
-            className="hidden" 
-            accept=".xlsx,.xls" 
-          />
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-indigo-700 border border-indigo-100 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            Import Excel
-          </button>
-          <button 
-            onClick={handleOpenDriveImport}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-indigo-700 border border-indigo-100 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
-          >
-            <Cloud className="w-3.5 h-3.5" />
-            Import from Drive
-          </button>
-          <button 
-            onClick={handleExport}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#666] border border-[#E5E5E5] rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export Excel
-          </button>
-          <button 
-            onClick={handleExportToDrive}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#666] border border-[#E5E5E5] rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Cloud className="w-3.5 h-3.5" />
-            Export to Drive
-          </button>
-        </div>
       </div>
+
+      <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm overflow-hidden min-h-[600px] flex flex-col">
+
 
       <div className="flex-1 overflow-x-auto">
         <table className="w-full text-left border-collapse">
@@ -758,172 +754,6 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
           </div>
         )}
       </div>
-
-      {/* Google Drive Import Modal */}
-      {isDriveModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200 no-print">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-lg mx-4 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b pb-4 mb-4">
-              <div className="flex items-center gap-2">
-                <Cloud className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-base font-bold text-gray-900">Import Personnel from Google Drive</h3>
-              </div>
-              <button 
-                onClick={() => setIsDriveModalOpen(false)}
-                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {!googleUser ? (
-              <div className="py-8 text-center space-y-4">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full w-fit mx-auto">
-                  <Cloud className="w-8 h-8" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-bold text-slate-800">Google Drive Connection Required</h4>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-normal">
-                    Please connect your Google Drive account first to securely search and import personnel spreadsheets or backup packs.
-                  </p>
-                </div>
-                
-                <button
-                  onClick={onGoogleConnect}
-                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-md transition-colors cursor-pointer"
-                >
-                  <span>Connect Google Drive</span>
-                </button>
-
-                <p className="text-[10px] text-slate-500 font-medium text-center bg-amber-50 rounded-lg p-2.5 border border-amber-100 leading-normal max-w-xs mx-auto">
-                  💡 <b>Cookie/Popup Workaround:</b> If popups are blocked by your browser, navigate to the <b>Backup & Sync</b> tab and click <b>Use Redirect Flow</b>. You can also click "New Tab  ↗" in the Reports tab to load the page standalone.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* File search/list view */}
-                <div className="mb-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input 
-                      type="text"
-                      placeholder="Search spreadsheets in Drive..."
-                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-150"
-                      value={driveSearchQuery}
-                      onChange={e => setDriveSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[250px] max-h-[400px]">
-                  {isFetchLoading ? (
-                    <div className="py-20 text-center text-slate-500 text-xs flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
-                      <span>Scanning Google Drive files...</span>
-                    </div>
-                  ) : driveFiles.length === 0 ? (
-                    <div className="py-20 text-center text-slate-400 text-xs">
-                      No spreadsheets (.xlsx/.xls) or backup files found in Drive.
-                      <button 
-                        onClick={fetchDriveFiles} 
-                        className="block mx-auto mt-2 text-indigo-650 hover:underline font-bold"
-                      >
-                        Reload List
-                      </button>
-                    </div>
-                  ) : (
-                    (() => {
-                      const filteredFiles = driveFiles.filter(f => 
-                        f.name.toLowerCase().includes(driveSearchQuery.toLowerCase())
-                      );
-                      
-                      if (filteredFiles.length === 0) {
-                        return <p className="text-center text-slate-400 text-xs py-10">No matching files found.</p>;
-                      }
-
-                      return filteredFiles.map(file => {
-                        const isSelected = selectedDriveFileId === file.id;
-                        const isJson = file.name.endsWith('.json');
-                        return (
-                          <div 
-                            key={file.id}
-                            onClick={() => !isImportLoading && setSelectedDriveFileId(file.id)}
-                            className={cn(
-                              "p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left",
-                              isSelected 
-                                ? "border-indigo-500 bg-indigo-50/40 shadow-xs" 
-                                : "border-slate-100 hover:bg-slate-50"
-                            )}
-                          >
-                            <div className="flex items-center gap-3 truncate">
-                              <div className={cn(
-                                "p-2 rounded-lg text-xs font-bold shrink-0",
-                                isJson ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
-                              )}>
-                                {isJson ? 'JSON' : 'XLSX'}
-                              </div>
-                              <div className="truncate">
-                                <p className="text-xs font-bold text-slate-850 truncate">{file.name}</p>
-                                <p className="text-[9px] text-slate-500">
-                                  Modified: {file.modifiedTime ? dayjs(file.modifiedTime).format('DD MMM YYYY, hh:mm A') : 'Unknown'}
-                                </p>
-                              </div>
-                            </div>
-                            <input 
-                              type="radio"
-                              checked={isSelected}
-                              onChange={() => {}}
-                              className="accent-indigo-600 shrink-0"
-                            />
-                          </div>
-                        );
-                      });
-                    })()
-                  )}
-                </div>
-
-                <div className="border-t pt-4 mt-4 flex items-center justify-between">
-                  <button
-                    onClick={fetchDriveFiles}
-                    disabled={isFetchLoading || isImportLoading}
-                    className="text-xs font-bold text-slate-650 hover:text-indigo-650 p-2 rounded-lg hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <RefreshCw className={cn("w-3.5 h-3.5", isFetchLoading && "animate-spin")} />
-                    Reload
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setIsDriveModalOpen(false)}
-                      disabled={isImportLoading}
-                      className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        const file = driveFiles.find(f => f.id === selectedDriveFileId);
-                        if (file) handleImportFromSelectedDriveFile(file.id, file.name);
-                      }}
-                      disabled={!selectedDriveFileId || isImportLoading}
-                      className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      {isImportLoading ? (
-                        <>
-                          <RefreshCw className="w-3 h-3 animate-spin" />
-                          Importing...
-                        </>
-                      ) : (
-                        'Load & Import'
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   </div>
   );

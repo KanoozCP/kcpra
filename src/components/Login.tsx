@@ -124,7 +124,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   type="text"
                   required
                   autoFocus
-                  placeholder="Enter admin username"
+                  placeholder="Username"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
                   className="block w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-medium text-slate-800"
@@ -145,7 +145,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="Enter password"
+                  placeholder="Password"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   className="block w-full pl-9 pr-10 py-2.5 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all font-medium text-slate-800"

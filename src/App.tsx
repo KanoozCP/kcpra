@@ -6,6 +6,7 @@ import {
   Calendar, 
   GanttChart as GanttIcon, 
   AlertTriangle, 
+  UserMinus,
   FileText,
   Plus,
   RefreshCw,
@@ -55,6 +56,7 @@ import ProjectManagement from './components/Projects';
 import AssignmentList from './components/Assignments';
 import GanttView from './components/GanttChart';
 import ShortageScreen from './components/ShortageAnalysis';
+import UnassignedManpower from './components/UnassignedManpower';
 import Login from './components/Login';
 
 // Bulletproof Storage Utilities to bypass SecurityErrors in sandboxed previews
@@ -776,6 +778,7 @@ export default function App() {
     { id: Tab.ASSIGNMENTS, label: 'Assignments', icon: Calendar },
     { id: Tab.GANTT, label: 'Gantt View', icon: GanttIcon },
     { id: Tab.SHORTAGE, label: 'Shortages', icon: AlertTriangle },
+    { id: Tab.UNASSIGNED, label: 'Not Assigned', icon: UserMinus },
     { id: Tab.REPORTS, label: 'Reports', icon: FileText },
   ];
 
@@ -994,22 +997,6 @@ export default function App() {
               </div>
               
               <div className="flex items-center gap-2">
-                {/* Print to PDF Action */}
-                {activeTab !== Tab.REPORTS && (
-                  <>
-                    <button
-                      onClick={() => window.print()}
-                      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all flex items-center gap-1.5 text-xs font-bold no-print cursor-pointer"
-                      title="Print current page to PDF (A4 format)"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Print to PDF</span>
-                    </button>
-
-                    <div className="h-4 w-[1px] bg-[#E5E5E5] mx-1 no-print" />
-                  </>
-                )}
-
                 <button 
                   onClick={handleReset}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all no-print"
@@ -1088,222 +1075,70 @@ export default function App() {
                 {activeTab === Tab.SHORTAGE && (
                   <ShortageScreen manpower={manpower} projects={projects} assignments={assignments} />
                 )}
-                {activeTab === Tab.REPORTS && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto py-4">
-                    {/* Excel Reports Card */}
-                    <div className="bg-white p-8 rounded-2xl border border-[#E5E5E5] text-center shadow-sm flex flex-col justify-between">
-                      <div className="mb-6">
-                        <FileText className="w-12 h-12 text-indigo-100 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold mb-2">Detailed Reports Export</h3>
-                        <p className="text-xs text-[#666] leading-relaxed">
-                          Generate multi-tab Excel reports containing consolidated planning records, manpower pools, demand lists, shortages, and assignments in <b>dd-mmm-yy</b> format.
-                        </p>
+                {activeTab === Tab.UNASSIGNED && (
+                  <UnassignedManpower manpower={manpower} assignments={assignments} />
+                )}
+                 {activeTab === Tab.REPORTS && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-2xl border border-[#E5E5E5] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-base font-bold text-[#1A1A1A]">Reports & Backups</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Consolidated spreadsheet generation and system database backups</p>
                       </div>
-                      <button 
-                        onClick={handleExport}
-                        className="bg-indigo-600 text-white w-full py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all inline-flex items-center justify-center gap-2 text-sm"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download Excel Report
-                      </button>
                     </div>
 
-                    {/* Drive Backup Master Packs Card */}
-                    <div className="bg-white p-8 rounded-2xl border border-indigo-100 text-center shadow-sm flex flex-col justify-between bg-gradient-to-br from-white to-indigo-50/10">
-                      <div className="mb-6">
-                        <RefreshCw className="w-12 h-12 text-indigo-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold mb-2 text-indigo-950">Backup & Sync Master Pack</h3>
-                        <p className="text-xs text-[#666] leading-relaxed">
-                          Export or reload the <b>Entire Database (including all earlier assignments)</b> as a single JSON pack. Perfect to save locally or within your shared <b>Google Drive</b> directory.
-                        </p>
-                      </div>
-                      <div className="space-y-3">
-                        <button 
-                          onClick={downloadFullBackup}
-                          className="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 w-full py-2.5 rounded-xl font-bold transition-all text-xs inline-flex items-center justify-center gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Download Master Pack (.json)
-                        </button>
-                        
-                        <label className="border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 w-full py-2.5 rounded-xl font-bold cursor-pointer transition-all text-xs inline-flex items-center justify-center gap-2 text-indigo-600">
-                          <Upload className="w-3.5 h-3.5" />
-                          Restore Backup Pack (.json)
-                          <input 
-                            type="file" 
-                            accept=".json" 
-                            onChange={handleBackupUpload} 
-                            className="hidden" 
-                          />
-                        </label>
-
-                        <div className="relative flex py-2 items-center">
-                          <div className="flex-grow border-t border-slate-150"></div>
-                          <span className="flex-shrink mx-2 text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Google Drive Cloud Sync</span>
-                          <div className="flex-grow border-t border-slate-150"></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto py-4">
+                      {/* Excel Reports Card */}
+                      <div className="bg-white p-8 rounded-2xl border border-[#E5E5E5] text-center shadow-sm flex flex-col justify-between">
+                        <div className="mb-6">
+                          <FileText className="w-12 h-12 text-indigo-100 mx-auto mb-4" />
+                          <h3 className="text-lg font-bold mb-2">Detailed Reports Export</h3>
+                          <p className="text-xs text-[#666] leading-relaxed">
+                            Generate multi-tab Excel reports containing consolidated planning records, manpower pools, demand lists, shortages, and assignments in <b>dd-mmm-yy</b> format.
+                          </p>
                         </div>
+                        <button 
+                          onClick={handleExport}
+                          className="bg-indigo-600 text-white w-full py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all inline-flex items-center justify-center gap-2 text-sm"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download Excel Report
+                        </button>
+                      </div>
 
-                        {googleUser ? (
-                          <div className="space-y-2.5 p-3.5 bg-indigo-50/30 rounded-xl border border-indigo-100 text-left">
-                            <div className="flex items-center justify-between text-[11px] text-slate-600">
-                              <span className="truncate max-w-[170px]">User: <b className="text-slate-900">{googleUser.email || googleUser.displayName}</b></span>
-                              <button 
-                                onClick={handleGoogleDisconnect}
-                                className="text-rose-600 hover:text-rose-700 font-extrabold shrink-0 text-[10px] uppercase tracking-wider"
-                              >
-                                Disconnect
-                              </button>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-2">
-                              <button 
-                                onClick={handleBackupToDrive}
-                                disabled={isDriveSyncing}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-bold transition-all text-[11px] inline-flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 shrink-0 cursor-pointer"
-                              >
-                                Upload to Google Drive
-                              </button>
-                              
-                              <button 
-                                onClick={handleRestoreFromDrive}
-                                disabled={isDriveSyncing}
-                                className="bg-white border border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50/20 text-indigo-700 py-2 rounded-lg font-bold transition-all text-[11px] inline-flex items-center justify-center gap-1.5 disabled:opacity-50 shrink-0 cursor-pointer"
-                              >
-                                Restore from Google Drive
-                              </button>
-                            </div>
-
-                            {driveSyncMessage && (
-                              <p className="text-[10px] text-indigo-600 italic text-center animate-pulse">
-                                {driveSyncMessage}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <button 
-                              onClick={handleGoogleConnect}
-                              disabled={isDriveSyncing}
-                              className="w-full flex items-center justify-center bg-white hover:bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 shadow-2xs cursor-pointer text-xs font-bold text-slate-700 transition-colors disabled:opacity-50"
-                            >
-                              <div className="flex items-center gap-2">
-                                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-4 h-4 shrink-0">
-                                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                                </svg>
-                                <span>Connect Google Drive (Popup)</span>
-                              </div>
-                            </button>
-
-                            <button 
-                              onClick={handleGoogleConnectRedirect}
-                              disabled={isDriveSyncing}
-                              className="w-full flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-750 rounded-xl py-2 px-4 shadow-3xs cursor-pointer text-xs font-bold transition-colors disabled:opacity-50"
-                            >
-                              <span>Use Redirect Flow (Bypasses Popup Limits)</span>
-                            </button>
-                            
-                            <p className="text-[10px] text-slate-500 font-medium text-center bg-amber-50 rounded-lg p-2.5 border border-amber-100 leading-normal">
-                              💡 <b>Iframe Preview Warning:</b> Google security restricts login popups inside sandboxed frames. Please open the portal in a 
-                              <a 
-                                href={window.location.href} 
-                                target="_blank" 
-                                rel="noreferrer" 
-                                className="text-indigo-650 font-bold hover:underline ml-1 inline-flex items-center gap-0.5"
-                              >
-                                New Tab ↗
-                              </a> 
-                              first to connect successfully, or use the <b>Redirect Flow</b> button above.
-                            </p>
-
-                            {driveSyncMessage && (
-                              <p className="text-[10px] text-indigo-600 italic text-center animate-pulse font-medium">
-                                {driveSyncMessage}
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Developer Firebase Settings Panel */}
-                        <div className="mt-4 border-t border-slate-100 pt-3 text-left">
-                          <button
-                            type="button"
-                            onClick={() => setShowCustomConfig(!showCustomConfig)}
-                            className="flex items-center justify-between w-full text-[10px] uppercase tracking-wider font-extrabold text-slate-500 hover:text-indigo-650 transition-colors cursor-pointer"
+                      {/* Backup Master Packs Card */}
+                      <div className="bg-white p-8 rounded-2xl border border-indigo-100 text-center shadow-sm flex flex-col justify-between bg-gradient-to-br from-white to-indigo-50/10">
+                        <div className="mb-6">
+                          <RefreshCw className="w-12 h-12 text-indigo-500 mx-auto mb-4" />
+                          <h3 className="text-lg font-bold mb-2 text-indigo-950">Backup & Sync Master Pack</h3>
+                          <p className="text-xs text-[#666] leading-relaxed">
+                            Export or reload the <b>Entire Database (including all earlier assignments)</b> as a single JSON pack. Perfect to save locally or within your shared directory.
+                          </p>
+                        </div>
+                        <div className="space-y-3">
+                          <button 
+                            onClick={downloadFullBackup}
+                            className="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 w-full py-2.5 rounded-xl font-bold transition-all text-xs inline-flex items-center justify-center gap-2"
                           >
-                            <span className="flex items-center gap-1.5 font-bold">
-                              <Sliders className="w-3.5 h-3.5 text-indigo-500" />
-                              Custom Firebase Project (Advanced)
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-extrabold font-mono">
-                              {showCustomConfig ? "HIDE ▲" : "SHOW ▼"}
-                            </span>
+                            <Download className="w-3.5 h-3.5" />
+                            Download Master Pack (.json)
                           </button>
-
-                          {showCustomConfig && (
-                            <div className="mt-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200 text-left space-y-2.5">
-                              <p className="text-[10px] text-[#555] leading-relaxed">
-                                Avoid domain limits on <b>GitHub Pages ({window.location.hostname})</b> by copy-pasting your own Firebase web configuration JSON here. This links this app interface directly to your personal Firebase backend.
-                              </p>
-                              
-                              <textarea
-                                value={customConfigStr}
-                                onChange={(e) => setCustomConfigStr(e.target.value)}
-                                placeholder={`{\n  "apiKey": "AIzaSy...",\n  "authDomain": "my-project.firebaseapp.com",\n  "projectId": "my-project"\n}`}
-                                className="w-full h-24 font-mono text-[10px] p-2 bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:outline-hidden leading-normal shadow-2xs placeholder-slate-400"
-                              />
-
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={handleSaveCustomConfig}
-                                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10.5px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
-                                >
-                                  Save & Apply
-                                </button>
-                                {safeLocalStorage.getItem('kanooz_custom_firebase_config') && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setCustomConfigStr('');
-                                      safeLocalStorage.removeItem('kanooz_custom_firebase_config');
-                                      alert('Resetting to default system credentials...');
-                                      window.location.reload();
-                                    }}
-                                    className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-[10.5px] font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
-                                  >
-                                    Reset to Default
-                                  </button>
-                                )}
-                              </div>
-
-                              <div className="text-[9.5px] bg-amber-50 rounded-lg p-3 border border-amber-100 text-slate-600 leading-normal space-y-1.5">
-                                <span className="font-bold text-amber-900 block">💡 1-Minute Custom Firebase Setup Guide:</span>
-                                <p className="text-[9.5px] text-slate-500 italic pb-1">
-                                  Because this app is running on your custom domain (<code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-bold">{window.location.hostname}</code>), you must link it to your own free Firebase project. You cannot change settings on the system default project as you do not own it.
-                                </p>
-                                <ol className="list-decimal pl-4.5 space-y-1 text-slate-500">
-                                  <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">Firebase Console ↗</a> and click <b>"Add project"</b> to create a free Firebase project.</li>
-                                  <li>In your new project, click <b>Authentication</b> in the left sidebar, click <b>Get Started</b>, and enable <b>Google</b> under the Sign-in providers (be sure to select a support email and click Save).</li>
-                                  <li>Go to <b>Authentication &gt; Settings</b> tab (next to Sign-in method). Scroll down to <b>Authorized domains</b>, click "Add domain", and copy-paste your exact domain: <code className="bg-slate-200/80 px-1 rounded font-bold text-slate-700">{window.location.hostname}</code>.</li>
-                                  <li>Click the gear icon next to "Project Overview" in the top-left &gt; <b>Project settings</b>.</li>
-                                  <li>In <b>General &gt; Web apps</b>, click the <code>&lt;/&gt;</code> (Web App) icon, enter any nickname, and register the app.</li>
-                                  <li>Copy the <code>firebaseConfig</code> JSON block from the screen and paste it into the textarea above, then click <b>Save & Apply</b>!</li>
-                                  <li>🌍 <b>Enable Google Drive API:</b> To authorize Google Drive uploads/downloads, visit the <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">Google Cloud API Library ↗</a>, select your newly created Firebase project in the top-left dropdown, and click <b>"Enable"</b>.</li>
-                                </ol>
-                                <p className="text-[9px] text-[#b33a3a] font-semibold mt-2.5 bg-red-50/50 border border-red-100 p-2 rounded">
-                                  ⚠️ <b>Important:</b> If you try to organize settings using the default App Config (spiritual-amplifier-307pf), Google Console will block you with a <i>"To manage settings, ask a project owner"</i> message. Rest assured, creating your own project is 100% free and completely bypassed this block!
-                                </p>
-                              </div>
-                            </div>
-                          )}
+                          
+                          <label className="border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 w-full py-2.5 rounded-xl font-bold cursor-pointer transition-all text-xs inline-flex items-center justify-center gap-2 text-indigo-600">
+                            <Upload className="w-3.5 h-3.5" />
+                            Restore Backup Pack (.json)
+                            <input 
+                              type="file" 
+                              accept=".json" 
+                              onChange={handleBackupUpload} 
+                              className="hidden" 
+                            />
+                          </label>
                         </div>
                       </div>
                     </div>
                   </div>
-                )}
+                 )}
               </motion.div>
             </AnimatePresence>
           </div>

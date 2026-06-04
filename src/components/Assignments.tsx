@@ -299,66 +299,78 @@ export default function AssignmentList({ assignments, manpower, projects, onAuto
   return (
     <div className="space-y-6 font-sans">
       {/* Search Header / Config bar */}
-      <div className="bg-white rounded-2xl border border-[#E5E5E5] p-5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
-          <div>
-            <h3 className="text-base font-bold text-[#1A1A1A]">Work Breakdown Structure (WBS) Placement</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Hierarchical deployment planning of crews, craft types and schedules</p>
+      <div className="bg-white rounded-2xl border border-[#E5E5E5] p-5 shadow-sm flex flex-col gap-4 mb-6">
+        <div>
+          <h3 className="text-base font-bold text-[#1A1A1A]">Assignments</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Dynamic job mapping, workforce deployments, and manual gap reconciliation</p>
+        </div>
+        
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-t border-slate-100 pt-3">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search WBS by project..." 
+              className="w-full pl-10 pr-4 py-1.5 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1 max-w-lg sm:ml-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search WBS by project..." 
-                className="w-full pl-10 pr-4 py-1.5 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+          
+          <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Sort:</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block leading-none">Sort:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-2.5 py-1.5 bg-[#F9FAFB] border border-[#E5E5E5] rounded-xl text-xs font-bold text-slate-705 outline-none focus:ring-2 focus:ring-indigo-100 cursor-pointer"
+                className="px-2.5 py-1.5 bg-white border border-[#E5E5E5] rounded-xl text-[11px] font-bold text-[#333] outline-none cursor-pointer hover:bg-slate-50"
               >
                 <option value="startDate">Start Date (Asc)</option>
                 <option value="status">Project Status (Asc) then Start Date</option>
               </select>
             </div>
+            
+            <div className="flex items-center gap-1.5 shrink-0">
+              {projects.length > 0 && (
+                <div className="flex items-center gap-1 border-r border-[#E5E5E5] pr-2.5 mr-0.5 shrink-0">
+                  <button 
+                    onClick={expandAll}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-slate-655 border border-slate-250 bg-white rounded-lg hover:bg-slate-50 transition-colors shadow-3xs"
+                    title="Expand All"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-slate-550" />
+                    Expand All
+                  </button>
+                  <button 
+                    onClick={collapseAll}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-slate-655 border border-slate-250 bg-white rounded-lg hover:bg-slate-50 transition-colors shadow-3xs"
+                    title="Collapse All"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+                    Collapse All
+                  </button>
+                </div>
+              )}
+
+              {assignments.length > 0 && (
+                <button 
+                  onClick={exportToExcel}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-655 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors shrink-0"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-550" />
+                  Export Excel
+                </button>
+              )}
+
+              <button 
+                onClick={onAutoAssign}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 border border-indigo-150 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors shrink-0"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Auto-Assign All
+              </button>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button 
-            onClick={expandAll}
-            className="px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl transition-all"
-          >
-            📂 Expand All
-          </button>
-          <button 
-            onClick={collapseAll}
-            className="px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl transition-all"
-          >
-            📁 Collapse All
-          </button>
-          {assignments.length > 0 && (
-            <button 
-              onClick={exportToExcel}
-              className="px-3 py-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-all flex items-center gap-1.5"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export
-            </button>
-          )}
-          <button 
-            onClick={onAutoAssign}
-            className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl flex items-center gap-2 hover:bg-indigo-700 hover:shadow-md transition-all transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Auto-Assign All
-          </button>
         </div>
       </div>
 

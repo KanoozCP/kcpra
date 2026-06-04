@@ -221,108 +221,116 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-[#E5E5E5] shadow-sm overflow-hidden flex flex-col h-[650px] font-sans">
-      
-      {/* Action / View configuration Header */}
-      <div className="p-4 border-b border-[#E5E5E5] flex flex-col sm:flex-row sm:items-center justify-between shrink-0 bg-[#FAFAFB] gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          
-          {/* Collapse Actions */}
-          <button 
-            onClick={expandAll}
-            className="px-2.5 py-1.5 border border-slate-250 bg-white hover:bg-slate-100/50 rounded-lg text-[10px] font-bold text-slate-700 transition"
-          >
-            📂 Expand All
-          </button>
-          <button 
-            onClick={collapseAll}
-            className="px-2.5 py-1.5 border border-slate-250 bg-white hover:bg-slate-100/50 rounded-lg text-[10px] font-bold text-slate-700 transition"
-          >
-            📁 Collapse All
-          </button>
-
-          <div className="h-4 w-[1px] bg-gray-300 mx-1" />
-
-          {/* Timeline Resolution Mode */}
-          <div className="flex p-1 bg-gray-200/50 rounded-lg shrink-0">
-            {(['daily', 'weekly', 'monthly'] as const).map(mode => (
+    <div className="space-y-6 font-sans">
+      <div className="bg-white rounded-2xl border border-[#E5E5E5] p-5 shadow-sm flex flex-col gap-4 mb-6">
+        <div>
+          <h3 className="text-base font-bold text-[#1A1A1A]">Gantt Timeline</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Visual scheduling, deployment durations, and crew coordination timeline</p>
+        </div>
+        
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-t border-slate-100 pt-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Collapse Actions */}
+            <div className="flex items-center gap-1 border-r border-[#E5E5E5] pr-2.5 mr-0.5 shrink-0">
               <button 
-                key={mode}
-                onClick={() => setTimelineMode(mode)}
-                className={cn(
-                  "px-2.5 py-1 rounded-md text-[9px] uppercase font-bold transition-all",
-                  timelineMode === mode ? "bg-white shadow-sm text-indigo-700" : "text-[#666]"
-                )}
+                onClick={expandAll}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-slate-655 border border-slate-250 bg-white rounded-lg hover:bg-slate-50 transition-colors shadow-3xs"
+                title="Expand All"
               >
-                {mode}
+                Expand All
               </button>
-            ))}
+              <button 
+                onClick={collapseAll}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold text-slate-655 border border-slate-250 bg-white rounded-lg hover:bg-slate-50 transition-colors shadow-3xs"
+                title="Collapse All"
+              >
+                Collapse All
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block leading-none">Resolution:</span>
+              <div className="flex p-0.5 bg-gray-100 border border-[#E5E5E5] rounded-xl shrink-0">
+                {(['daily', 'weekly', 'monthly'] as const).map(mode => (
+                  <button 
+                    key={mode}
+                    onClick={() => setTimelineMode(mode)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-lg text-[9px] uppercase font-bold transition-all",
+                      timelineMode === mode ? "bg-white shadow-3xs text-indigo-700 font-extrabold" : "text-[#555]"
+                    )}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="h-4 w-[1px] bg-gray-305 mx-1" />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block leading-none">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-2.5 py-1.5 bg-white border border-[#E5E5E5] rounded-xl text-[11px] font-bold text-[#333] outline-none cursor-pointer hover:bg-slate-50"
+              >
+                <option value="startDate">Project Start (Asc)</option>
+                <option value="status">Project Status (Asc)</option>
+                <option value="craft">Crew Craft (A-Z)</option>
+                <option value="type">Employment Type</option>
+              </select>
+            </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[10px] font-bold text-[#666] uppercase tracking-wider">Sort:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-2.5 py-1 bg-white border border-[#E5E5E5] rounded-lg text-[9px] font-bold text-[#333] outline-none cursor-pointer hover:bg-slate-50"
+            <button 
+              onClick={handleExport}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#444] border border-[#E5E5E5] rounded-lg bg-white hover:bg-slate-50 transition-colors shrink-0"
             >
-              <option value="startDate">Project Start (Asc)</option>
-              <option value="status">Project Status (Asc)</option>
-              <option value="craft">Crew Craft (A-Z)</option>
-              <option value="type">Crew Employment Type (A-Z)</option>
-            </select>
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              Export Excel
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Legend Map and Controls */}
-        <div className="flex items-center justify-between sm:justify-end gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded shadow-sm bg-amber-100 border border-amber-300" />
-              <span className="text-[9px] font-extrabold text-[#666] tracking-wide uppercase">Pre-TA</span>
+      <div className="bg-white rounded-xl border border-[#E5E5E5] shadow-sm overflow-hidden flex flex-col h-[650px] font-sans">
+        {/* Legends & Zoom Controls */}
+        <div className="p-3 border-b border-[#E5E5E5] flex items-center justify-between shrink-0 bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded shadow-3xs bg-amber-100 border border-amber-300" />
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Pre-TA</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded shadow-sm bg-rose-100 border border-rose-300" />
-              <span className="text-[9px] font-extrabold text-[#666] tracking-wide uppercase">TA</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded shadow-3xs bg-rose-100 border border-rose-300" />
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">TA Phase</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded shadow-sm bg-emerald-150 border border-emerald-350" />
-              <span className="text-[9px] font-extrabold text-[#666] tracking-wide uppercase">Post-TA</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded shadow-3xs bg-emerald-100 border border-emerald-300" />
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Post-TA</span>
             </div>
           </div>
-
-          <div className="h-5 w-[1px] bg-gray-300 mx-1 hidden sm:block" />
 
           <div className="flex items-center gap-1">
             <button 
-              onClick={handleExport}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 uppercase transition-all shadow-sm"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export
-            </button>
-            <button 
               onClick={() => setZoomScale(s => Math.min(s + 0.1, 2.5))}
-              className="p-1 px-1.5 hover:bg-gray-150 rounded-lg transition-colors border border-gray-200 shrink-0"
+              className="p-1.5 hover:bg-gray-150 rounded-lg transition-colors border border-[#E5E5E5] shrink-0 bg-white"
               title="Zoom In"
             >
               <ZoomIn className="w-3.5 h-3.5 text-gray-650" />
             </button>
             <button 
               onClick={() => setZoomScale(s => Math.max(s - 0.1, 0.6))}
-              className="p-1 px-1.5 hover:bg-gray-150 rounded-lg transition-colors border border-gray-200 shrink-0"
+              className="p-1.5 hover:bg-gray-150 rounded-lg transition-colors border border-[#E5E5E5] shrink-0 bg-white"
               title="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5 text-gray-650" />
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Gantt Timeline Container */}
-      <div className="flex-1 overflow-auto relative">
+        {/* Gantt Timeline Container */}
+        <div className="flex-1 overflow-auto relative">
         <div className="min-w-max">
           
           {/* Timeline Grid Header (Sticky Top) */}
@@ -534,5 +542,6 @@ export default function GanttView({ manpower, projects, assignments }: Props) {
       </div>
       
     </div>
+  </div>
   );
 }
