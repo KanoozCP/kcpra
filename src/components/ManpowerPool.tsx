@@ -572,7 +572,7 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
               <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center min-w-[110px]">Skill Rating</th>
               <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Contract period</th>
               <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Vacation period</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right min-w-[130px]">Actions</th>
+              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right w-[140px] min-w-[140px]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F2F2F2]">
@@ -679,11 +679,11 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5 min-w-[125px]">
+                    <td className="px-5 py-3 text-right w-[140px] min-w-[140px]">
+                      <div className="flex items-center justify-end gap-1.5 w-full">
                         <button 
                           onClick={handleSaveEdit} 
-                          className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-3xs flex items-center gap-1.5 cursor-pointer border border-indigo-200"
+                          className="px-2 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-3xs flex items-center gap-1.5 cursor-pointer border border-indigo-200 shrink-0"
                           title="Save changes"
                         >
                           <Save className="w-3.5 h-3.5" />
@@ -691,7 +691,7 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                         </button>
                         <button 
                           onClick={handleCancelEdit} 
-                          className="px-2.5 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-3xs"
+                          className="px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-3xs shrink-0"
                           title="Discard changes"
                         >
                           Cancel
@@ -708,7 +708,7 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                     <div className="flex items-center gap-2.5">
                       <span className={cn(
                         "px-2 py-0.5 rounded text-[10px] font-bold tracking-tight",
-                        isDuplicate ? "bg-red-105 text-red-700 border border-red-200" : "bg-slate-100 text-slate-705"
+                        isDuplicate ? "bg-red-100 text-red-700 border border-red-200" : "bg-slate-100 text-slate-700"
                       )}>
                         #{m.badgeNo}
                       </span>
@@ -750,8 +750,8 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                       <span className="text-[10px] text-slate-400 font-medium italic">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1.5 text-xs">
+                  <td className="px-5 py-3.5 text-right w-[140px] min-w-[140px]">
+                    <div className="flex items-center justify-end gap-1.5 text-xs w-full">
                       {confirmDeleteId === m.id ? (
                         <>
                           <button 
