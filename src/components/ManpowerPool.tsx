@@ -561,18 +561,18 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
       <div className="bg-white rounded-2xl border border-[#E5E5E5] shadow-sm overflow-hidden min-h-[600px] flex flex-col">
 
 
-      <div className="flex-1 overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1240px]">
+      <div className="flex-1 overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left border-collapse min-w-[820px]">
           <thead>
             <tr className="bg-[#F9FAFB] border-b border-[#E5E5E5]">
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Badge & Name</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[150px]">Passport / Iqama</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[180px]">Craft Trade</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[110px]">Type</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center min-w-[110px]">Skill Rating</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Contract period</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider min-w-[200px]">Vacation period</th>
-              <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right w-[140px] min-w-[140px]">Actions</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[140px] max-w-[155px]">Badge & Name</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[100px] max-w-[110px]">Passport / Iqama</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[130px] max-w-[145px]">Craft Trade</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[75px] max-w-[85px]">Type</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider text-center min-w-[75px] max-w-[85px]">Skill Rating</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[115px] max-w-[125px]">Contract period</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[115px] max-w-[125px]">Vacation period</th>
+              <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider text-right w-[95px] min-w-[95px]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F2F2F2]">
@@ -583,50 +583,50 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
               if (isEditing) {
                 return (
                   <tr key={m.id} className="bg-indigo-50/40">
-                    <td className="px-5 py-3">
-                      <div className="space-y-1.5 max-w-[200px]">
+                    <td className="px-3.5 py-2">
+                      <div className="space-y-1 max-w-[140px]">
                         <input 
-                          className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-medium outline-hidden" 
+                          className="w-full px-2 py-0.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-medium outline-hidden" 
                           value={m.name} 
                           onChange={e => updateWorkerField({...m, name: e.target.value})}
                           placeholder="Worker Name"
                         />
                         <input 
-                          className="w-full px-2.5 py-1 text-[11px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-semibold font-mono outline-hidden" 
+                          className="w-full px-2 py-0.5 text-[11px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-semibold font-mono outline-hidden" 
                           value={m.badgeNo} 
                           onChange={e => updateWorkerField({...m, badgeNo: e.target.value})}
                           placeholder="Badge No"
                         />
                       </div>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3.5 py-2">
                       <input 
-                        className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-medium outline-hidden" 
+                        className="w-full px-2 py-0.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-medium outline-hidden" 
                         value={m.passportIqama || ''} 
                         onChange={e => updateWorkerField({...m, passportIqama: e.target.value})}
                         placeholder="Passport/Iqama"
                       />
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3.5 py-2">
                       <input 
-                        className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-bold outline-hidden" 
+                        className="w-full px-2 py-0.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white font-bold outline-hidden" 
                         value={m.craft} 
                         onChange={e => updateWorkerField({...m, craft: e.target.value})}
                         placeholder="Craft Trade"
                       />
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3.5 py-2">
                       <select 
-                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded-lg bg-white font-semibold text-slate-700 outline-hidden" 
+                        className="w-full px-1.5 py-0.5 text-xs border border-slate-200 rounded-lg bg-white font-semibold text-slate-700 outline-hidden" 
                         value={m.employmentType} 
                         onChange={e => updateWorkerField({...m, employmentType: e.target.value as EmploymentType})}
                       >
                         {EMPLOYMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3.5 py-2">
                       <select
-                        className="w-full px-2 py-1 text-xs border border-slate-200 rounded-lg bg-white font-extrabold text-slate-700 outline-hidden"
+                        className="w-full px-1.5 py-0.5 text-xs border border-slate-200 rounded-lg bg-white font-extrabold text-slate-700 outline-hidden"
                         value={m.strength || 'Good'}
                         onChange={e => updateWorkerField({...m, strength: e.target.value as any})}
                       >
@@ -635,63 +635,63 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                         <option value="Average">Average</option>
                       </select>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3.5 py-2">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">Start:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase shrink-0">Start:</span>
                           <input 
                             type="date" 
-                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            className="px-1 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden w-full" 
                             value={m.joinDate} 
                             onChange={e => updateWorkerField({...m, joinDate: e.target.value})}
                           />
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">End:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase shrink-0">End:</span>
                           <input 
                             type="date" 
-                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            className="px-1 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden w-full" 
                             value={m.releaseDate} 
                             onChange={e => updateWorkerField({...m, releaseDate: e.target.value})}
                           />
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3.5 py-2">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">Start:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase shrink-0">Start:</span>
                           <input 
                             type="date" 
-                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            className="px-1 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden w-full" 
                             value={m.vacationStart || ''} 
                             onChange={e => updateWorkerField({...m, vacationStart: e.target.value})}
                           />
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase">End:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-bold text-gray-400 w-8 uppercase shrink-0">End:</span>
                           <input 
                             type="date" 
-                            className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden" 
+                            className="px-1 py-0.5 text-[10px] border border-slate-200 rounded-md font-semibold font-mono outline-hidden w-full" 
                             value={m.vacationEnd || ''} 
                             onChange={e => updateWorkerField({...m, vacationEnd: e.target.value})}
                           />
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-right w-[140px] min-w-[140px]">
-                      <div className="flex items-center justify-end gap-1.5 w-full">
+                    <td className="px-3.5 py-2 text-right w-[95px] min-w-[95px]">
+                      <div className="flex flex-col gap-1 w-full">
                         <button 
                           onClick={handleSaveEdit} 
-                          className="px-2 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-3xs flex items-center gap-1.5 cursor-pointer border border-indigo-200 shrink-0"
+                          className="px-1 py-0.5 bg-indigo-600 text-white rounded text-[10px] font-bold hover:bg-indigo-700 transition-colors shadow-3xs flex items-center justify-center gap-1 cursor-pointer border border-indigo-200 w-full shrink-0"
                           title="Save changes"
                         >
-                          <Save className="w-3.5 h-3.5" />
+                          <Save className="w-3 h-3" />
                           Save
                         </button>
                         <button 
                           onClick={handleCancelEdit} 
-                          className="px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-3xs shrink-0"
+                          className="px-1 py-0.5 bg-white border border-slate-200 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors cursor-pointer shadow-3xs w-full shrink-0"
                           title="Discard changes"
                         >
                           Cancel
@@ -704,32 +704,34 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
 
               return (
                 <tr key={m.id} className={cn("hover:bg-slate-50/60 transition-colors group", isDuplicate && "bg-red-50/30")}>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className={cn(
-                        "px-2 py-0.5 rounded text-[10px] font-bold tracking-tight",
-                        isDuplicate ? "bg-red-100 text-red-700 border border-red-200" : "bg-slate-100 text-slate-700"
-                      )}>
-                        #{m.badgeNo}
-                      </span>
+                  <td className="px-3.5 py-2.5">
+                    <div className="flex flex-col gap-0.5 max-w-[140px]">
                       <div className="flex items-center gap-1.5">
-                        <div className="text-xs font-bold text-[#1A1A1A]">{m.name}</div>
-                        {isDuplicate && <AlertCircle className="w-3.5 h-3.5 text-red-500 animate-pulse" title="Duplicate Badge Number" />}
+                        <span className={cn(
+                          "px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-tight",
+                          isDuplicate ? "bg-red-100 text-red-700 border border-red-200" : "bg-slate-100 text-slate-700"
+                        )}>
+                          #{m.badgeNo}
+                        </span>
+                        {isDuplicate && <AlertCircle className="w-3.5 h-3.5 text-red-500 animate-pulse shrink-0" title="Duplicate Badge Number" />}
+                      </div>
+                      <div className="text-xs font-bold text-[#1A1A1A] leading-tight break-words whitespace-normal">
+                        {m.name}
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
-                    {m.passportIqama || <span className="text-slate-350 italic text-[11px]">—</span>}
+                  <td className="px-3.5 py-2.5 text-xs text-slate-600 font-medium break-all whitespace-normal max-w-[105px]">
+                    {m.passportIqama || <span className="text-slate-300 italic text-[11px]">—</span>}
                   </td>
-                  <td className="px-5 py-3.5">
-                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-150 rounded px-2 py-0.5 text-[10px] font-bold tracking-tight block w-fit">
+                  <td className="px-3.5 py-2.5">
+                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-150 rounded px-2 py-0.5 text-[10px] font-bold tracking-tight block w-fit whitespace-normal break-words max-w-[130px] leading-tight">
                       {m.craft}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
+                  <td className="px-3.5 py-2.5 text-xs text-slate-600 font-semibold">
                     {m.employmentType}
                   </td>
-                  <td className="px-5 py-3.5 text-center">
+                  <td className="px-3.5 py-2.5 text-center">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold shadow-3xs border block w-fit mx-auto ${
                       m.strength === 'Excellent' ? 'bg-purple-50 text-purple-700 border-purple-150' :
                       m.strength === 'Average' ? 'bg-amber-50 text-amber-700 border-amber-150' :
@@ -738,27 +740,27 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                       {m.strength || 'Good'}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex flex-col gap-0.5 font-mono">
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase w-8">Start:</span>
+                  <td className="px-3.5 py-2.5">
+                    <div className="flex flex-col gap-0.5 font-mono max-w-[115px]">
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase w-8 shrink-0">Start:</span>
                         <span>{dayjs(m.joinDate).format('DD-MMM-YY')}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase w-8">End:</span>
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase w-8 shrink-0">End:</span>
                         <span>{dayjs(m.releaseDate).format('DD-MMM-YY')}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-3.5 py-2.5">
                     {m.vacationStart ? (
-                      <div className="flex flex-col gap-0.5 font-mono">
-                        <div className="flex items-center gap-1.5 text-[10px] text-orange-600 font-bold">
-                          <span className="text-[9px] text-orange-400 font-bold uppercase w-8">Start:</span>
+                      <div className="flex flex-col gap-0.5 font-mono max-w-[115px]">
+                        <div className="flex items-center gap-1.5 text-[10px] text-orange-600 font-extrabold">
+                          <span className="text-[9px] text-orange-400 font-bold uppercase w-8 shrink-0">Start:</span>
                           <span>{dayjs(m.vacationStart).format('DD-MMM-YY')}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-orange-600 font-bold">
-                          <span className="text-[9px] text-orange-400 font-bold uppercase w-8">End:</span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-orange-600 font-extrabold">
+                          <span className="text-[9px] text-orange-400 font-bold uppercase w-8 shrink-0">End:</span>
                           <span>{dayjs(m.vacationEnd).format('DD-MMM-YY')}</span>
                         </div>
                       </div>
@@ -766,34 +768,34 @@ export default function ManpowerPool({ manpower, setManpower, isAdding, onCloseA
                       <span className="text-[10px] text-slate-400 font-medium italic">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-right w-[140px] min-w-[140px]">
-                    <div className="flex items-center justify-end gap-1.5 text-xs w-full">
+                  <td className="px-3.5 py-2.5 text-right w-[95px] min-w-[95px]">
+                    <div className="flex items-center justify-end gap-1 text-xs w-full">
                       {confirmDeleteId === m.id ? (
-                        <>
+                        <div className="flex flex-col gap-1 items-end w-full">
                           <button 
                             onClick={() => deleteWorker(m.id)}
-                            className="px-2.5 py-1 bg-red-600 text-white rounded text-[10px] font-bold hover:bg-red-750 transition-colors shadow-3xs border border-red-200"
+                            className="px-1.5 py-0.5 bg-red-600 text-white rounded text-[9px] font-bold hover:bg-red-750 transition-colors shadow-3xs border border-red-200 block w-full text-center cursor-pointer"
                           >
                             Confirm
                           </button>
                           <button 
                             onClick={() => setConfirmDeleteId(null)}
-                            className="px-2.5 py-1 bg-white border border-slate-200 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50 transition-colors shadow-3xs"
+                            className="px-1.5 py-0.5 bg-white border border-slate-200 text-slate-600 rounded text-[9px] font-bold hover:bg-slate-50 transition-colors shadow-3xs block w-full text-center cursor-pointer"
                           >
                             Cancel
                           </button>
-                        </>
+                        </div>
                       ) : (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => handleStartEdit(m)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="Edit">
-                            <Edit2 className="w-4 h-4" />
+                        <div className="flex items-center gap-0.5 justify-end w-full">
+                          <button onClick={() => handleStartEdit(m)} className="p-1 px-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer" title="Edit">
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button 
                             onClick={() => setConfirmDeleteId(m.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            className="p-1 px-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       )}

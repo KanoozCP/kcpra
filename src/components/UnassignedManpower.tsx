@@ -179,40 +179,44 @@ export default function UnassignedManpower({ manpower, assignments }: Props) {
             <p className="text-xs text-gray-500 mt-1 max-w-sm">All personnel are currently assigned to active project phases, or match criteria filters.</p>
           </div>
         ) : (
-          <div className="flex-1 overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="flex-1 overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[720px]">
               <thead>
                 <tr className="bg-[#F9FAFB] border-b border-[#E5E5E5]">
-                  <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Badge & Name</th>
-                  <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Passport / Iqama</th>
-                  <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Craft Trade</th>
-                  <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Type</th>
-                  <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Skill Rating</th>
-                  <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Join Date</th>
+                  <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[140px] max-w-[155px]">Badge & Name</th>
+                  <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[100px] max-w-[110px]">Passport / Iqama</th>
+                  <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[130px] max-w-[145px]">Craft Trade</th>
+                  <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[75px] max-w-[85px]">Type</th>
+                  <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider text-center min-w-[75px] max-w-[85px]">Skill Rating</th>
+                  <th className="px-3.5 py-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-wider min-w-[95px] max-w-[105px]">Join Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F2F2F2]">
                 {filteredWorkers.map(m => (
                   <tr key={m.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold tracking-tight">#{m.badgeNo}</span>
-                        <div className="text-xs font-bold text-[#1A1A1A]">{m.name}</div>
+                    <td className="px-3.5 py-2.5">
+                      <div className="flex flex-col gap-0.5 max-w-[140px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-tight">#{m.badgeNo}</span>
+                        </div>
+                        <div className="text-xs font-bold text-[#1A1A1A] leading-tight break-words whitespace-normal">
+                          {m.name}
+                        </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
-                      {m.passportIqama || <span className="text-slate-350 italic text-[11px]">—</span>}
+                    <td className="px-3.5 py-2.5 text-xs text-slate-600 font-medium break-all whitespace-normal max-w-[105px]">
+                      {m.passportIqama || <span className="text-slate-300 italic text-[11px]">—</span>}
                     </td>
-                    <td className="px-5 py-3.5">
-                      <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 rounded px-2 py-0.5 text-[10px] font-bold tracking-tight">
+                    <td className="px-3.5 py-2.5">
+                      <span className="bg-indigo-50 text-indigo-700 border border-indigo-150 rounded px-2 py-0.5 text-[10px] font-bold tracking-tight block w-fit whitespace-normal break-words max-w-[130px] leading-tight">
                         {m.craft}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">
+                    <td className="px-3.5 py-2.5 text-xs text-slate-600 font-semibold">
                       {m.employmentType}
                     </td>
-                    <td className="px-5 py-3.5 text-center">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold shadow-3xs border ${
+                    <td className="px-3.5 py-2.5 text-center">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold shadow-3xs border block w-fit mx-auto ${
                         m.strength === 'Excellent' ? 'bg-emerald-50 text-emerald-700 border-emerald-150' :
                         m.strength === 'Average' ? 'bg-amber-50 text-amber-700 border-amber-150' :
                         'bg-blue-50 text-blue-700 border-blue-150'
@@ -220,7 +224,7 @@ export default function UnassignedManpower({ manpower, assignments }: Props) {
                         {m.strength || 'Good'}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate-500 font-semibold font-mono">
+                    <td className="px-3.5 py-2.5 text-xs text-slate-500 font-semibold font-mono whitespace-nowrap">
                       {m.joinDate ? dayjs(m.joinDate).format('DD-MMM-YY') : 'N/A'}
                     </td>
                   </tr>
