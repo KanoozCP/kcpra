@@ -79,7 +79,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             <div className="mb-4 relative">
               <div className="absolute inset-0 bg-indigo-100 rounded-full blur-md opacity-50 scale-125"></div>
               <img 
-                src="https://kanooz.com/assets/images/logo.png" 
+                src="https://kanooz.com/wp-content/uploads/2026/05/Kanooz-Logo-transparent-png-2048x556.png" 
                 alt="Kanooz Logo" 
                 className="h-10 w-auto relative z-10 filter drop-shadow-sm" 
                 referrerPolicy="no-referrer"

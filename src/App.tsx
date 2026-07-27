@@ -981,7 +981,7 @@ export default function App() {
           <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-6 shrink-0 z-20 sticky top-0">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2.5">
-                <img src="https://kanooz.com/assets/images/logo.png" alt="Logo" className="h-6 w-auto" referrerPolicy="no-referrer" />
+                <img src="https://kanooz.com/wp-content/uploads/2026/05/Kanooz-Logo-transparent-png-2048x556.png" alt="Logo" className="h-6 w-auto" referrerPolicy="no-referrer" />
                 <div className="h-6 w-[1px] bg-[#E5E5E5]" />
                 <div>
                   <h2 className="text-xs font-bold text-indigo-900 leading-tight">Central Planning Portal</h2>
