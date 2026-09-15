@@ -124,6 +124,9 @@ export default function App() {
   // Custom Reset & Backup States
   const [showResetModal, setShowResetModal] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [resetManpowerOpt, setResetManpowerOpt] = useState(true);
   const [resetProjectsOpt, setResetProjectsOpt] = useState(true);
   const [resetAssignmentsOpt, setResetAssignmentsOpt] = useState(true);
@@ -326,10 +329,20 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you would like to sign out of the planning portal?')) {
-      safeSessionStorage.removeItem('kanooz_logged_in');
-      setIsLoggedIn(false);
-    }
+    setShowLogoutModal(true);
+  };
+
+  const executeLogout = () => {
+    safeSessionStorage.removeItem('kanooz_logged_in');
+    safeLocalStorage.removeItem('kanooz_logged_in');
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage?.removeItem('kanooz_logged_in');
+        window.localStorage?.removeItem('kanooz_logged_in');
+      }
+    } catch (e) {}
+    setIsLoggedIn(false);
+    setShowLogoutModal(false);
   };
 
   const handleReset = () => {
@@ -562,21 +575,24 @@ export default function App() {
     }
   };
 
-  const handleGoogleDisconnect = async () => {
-    if (window.confirm('Are you sure you want to disconnect your Google Drive? Your local data will remain safe.')) {
-      setIsDriveSyncing(true);
-      try {
-        await googleLogout();
-        setGoogleUser(null);
-        setGoogleToken(null);
-        setDriveSyncMessage('Signed out from Google.');
-        setTimeout(() => setDriveSyncMessage(null), 3000);
-      } catch (err: any) {
-        console.error(err);
-        alert(`Disconnection Error: ${err.message}`);
-      } finally {
-        setIsDriveSyncing(false);
-      }
+  const handleGoogleDisconnect = () => {
+    setShowDisconnectModal(true);
+  };
+
+  const executeGoogleDisconnect = async () => {
+    setShowDisconnectModal(false);
+    setIsDriveSyncing(true);
+    try {
+      await googleLogout();
+      setGoogleUser(null);
+      setGoogleToken(null);
+      setDriveSyncMessage('Signed out from Google.');
+      setTimeout(() => setDriveSyncMessage(null), 3000);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Disconnection Error: ${err.message}`);
+    } finally {
+      setIsDriveSyncing(false);
     }
   };
 
@@ -648,11 +664,6 @@ export default function App() {
       return;
     }
 
-    const confirmed = window.confirm(
-      'Are you sure you want to backup your active database to Google Drive?\n\nThis will write "Kanooz_Master_Planning_Backup.json" directly onto your connected Google Drive storage. Overwriting any previous backend backups.'
-    );
-    if (!confirmed) return;
-
     setIsDriveSyncing(true);
     setDriveSyncMessage('Uploading backup pack to Google Drive...');
     try {
@@ -689,17 +700,16 @@ export default function App() {
     }
   };
 
-  const handleRestoreFromDrive = async () => {
+  const handleRestoreFromDrive = () => {
     if (!googleUser) {
       alert('Connection error: Google Drive is not paired. Please connect your Drive first.');
       return;
     }
+    setShowRestoreModal(true);
+  };
 
-    const confirmed = window.confirm(
-      'Are you sure you want to restore data from Google Drive?\n\nThis will download your cloud master backup file "Kanooz_Master_Planning_Backup.json" and completely replace your current local manpower pool, projects list, and confirmed assignments. Local data will be overwritten!'
-    );
-    if (!confirmed) return;
-
+  const executeRestoreFromDrive = async () => {
+    setShowRestoreModal(false);
     setIsDriveSyncing(true);
     setDriveSyncMessage('Retrieving database from Google Drive...');
     try {
@@ -1015,10 +1025,19 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={handleReset}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all no-print"
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all no-print cursor-pointer"
                   title="System Reset"
                 >
                   <RotateCcw className="w-4 h-4" />
+                </button>
+
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#C53F27] hover:text-white bg-rose-50/80 hover:bg-[#C53F27] border border-rose-200/70 hover:border-transparent transition-all cursor-pointer no-print shadow-2xs"
+                  title="Sign Out of Central Planning Portal"
+                >
+                  <LogOut className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Sign Out</span>
                 </button>
 
                 {activeTab === Tab.MANPOWER && (
@@ -1321,6 +1340,96 @@ export default function App() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Sign Out Confirmation Dialog */}
+          {showLogoutModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-sm mx-4 animate-in zoom-in-95 duration-200 text-center">
+                <div className="w-12 h-12 bg-rose-50 text-[#C53F27] rounded-full flex items-center justify-center mx-auto mb-3">
+                  <LogOut className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Sign Out</h3>
+                <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                  Are you sure you want to sign out of Kanooz Central Planning Portal? You will return to the login screen.
+                </p>
+
+                <div className="flex items-center justify-center gap-3 text-xs font-semibold">
+                  <button 
+                    onClick={() => setShowLogoutModal(false)}
+                    className="flex-1 px-4 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={executeLogout}
+                    className="flex-1 px-4 py-2.5 bg-[#C53F27] hover:bg-[#a8331e] text-white rounded-xl transition-colors shadow-md shadow-rose-200/50 cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Disconnect Google Drive Dialog */}
+          {showDisconnectModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-sm mx-4 animate-in zoom-in-95 duration-200 text-center">
+                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Disconnect Google Drive?</h3>
+                <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                  Your local planner database will remain safe and unaffected. You can reconnect your Google Drive anytime.
+                </p>
+
+                <div className="flex items-center justify-center gap-3 text-xs font-semibold">
+                  <button 
+                    onClick={() => setShowDisconnectModal(false)}
+                    className="flex-1 px-4 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={executeGoogleDisconnect}
+                    className="flex-1 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-colors shadow-md cursor-pointer"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Restore Confirmation Dialog */}
+          {showRestoreModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200 text-center">
+                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Download className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Restore from Google Drive?</h3>
+                <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                  This will download "Kanooz_Master_Planning_Backup.json" from Google Drive and replace your active local database. Current unsaved local changes will be replaced.
+                </p>
+
+                <div className="flex items-center justify-center gap-3 text-xs font-semibold">
+                  <button 
+                    onClick={() => setShowRestoreModal(false)}
+                    className="flex-1 px-4 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={executeRestoreFromDrive}
+                    className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors shadow-md cursor-pointer"
+                  >
+                    Restore Data
+                  </button>
+                </div>
               </div>
             </div>
           )}

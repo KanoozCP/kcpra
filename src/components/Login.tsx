@@ -43,18 +43,19 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       // Case-insensitive comparison for ultimate simplicity and user-friendliness
       if (cleanInputUser.toLowerCase() === username.toLowerCase() && cleanInputPass.toLowerCase() === password.toLowerCase()) {
         try {
-          if (typeof window !== 'undefined' && window.sessionStorage) {
-            window.sessionStorage.setItem('kanooz_logged_in', 'true');
+          if (typeof window !== 'undefined') {
+            window.sessionStorage?.setItem('kanooz_logged_in', 'true');
+            window.localStorage?.setItem('kanooz_logged_in', 'true');
           }
         } catch (e) {
-          console.warn('sessionStorage is locked but allowing transient in-memory login', e);
+          console.warn('Storage is locked but allowing transient in-memory login', e);
         }
         onLoginSuccess();
       } else {
         setError('Invalid username or password. Please try again.');
         setIsLoading(false);
       }
-    }, 600);
+    }, 500);
   };
 
   return (
@@ -175,7 +176,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md shadow-indigo-100 cursor-pointer disabled:opacity-50 transition-all"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white bg-[#2A337B] hover:bg-[#1f265c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md shadow-indigo-900/10 cursor-pointer disabled:opacity-50 transition-all"
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">

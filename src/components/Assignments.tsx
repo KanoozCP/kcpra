@@ -198,9 +198,7 @@ export default function AssignmentList({ assignments, manpower, projects, onAuto
 
   // Clear Assignment Spot - "To be Announced"
   const clearAssignmentSpot = (assignId: string) => {
-    if (confirm("Are you sure you want to clear this worker and mark it as 'To be Announced'?")) {
-      setAssignments(assignments.filter(a => a.id !== assignId));
-    }
+    setAssignments(assignments.filter(a => a.id !== assignId));
   };
 
   // Export
