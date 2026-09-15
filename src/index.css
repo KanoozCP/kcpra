@@ -1,9 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;705;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Kanooz Official Navy Palette (derived from #2A337B) */
+  --color-indigo-50: #F2F4FA;
+  --color-indigo-100: #E4E7F6;
+  --color-indigo-200: #CAD1ED;
+  --color-indigo-300: #A3B0DF;
+  --color-indigo-400: #7185CE;
+  --color-indigo-500: #465BBC;
+  --color-indigo-600: #2A337B;
+  --color-indigo-700: #212863;
+  --color-indigo-800: #191E4C;
+  --color-indigo-900: #121637;
+  --color-indigo-950: #0B0E24;
+
+  /* Kanooz Official Accent Red Palette (derived from #C53F27) */
+  --color-kanooz-red: #C53F27;
+  --color-kanooz-red-hover: #AF341E;
+  --color-kanooz-red-light: #DE4C32;
+  --color-kanooz-red-50: #FDF4F2;
+  --color-kanooz-red-100: #FCE8E4;
+  --color-kanooz-red-200: #F9D3CB;
+  --color-kanooz-navy: #2A337B;
+  --color-kanooz-navy-dark: #1E255E;
 }
 
 /* Custom modern scrollbar utility for tables and interactive overflow zones */

@@ -878,10 +878,18 @@ export default function App() {
           "bg-white border-r border-[#E5E5E5] flex flex-col shrink-0 transition-all duration-300 ease-in-out z-20",
           isSidebarOpen ? "w-64" : "w-16"
         )}>
-          <div className="h-16 bg-white border-b border-[#E5E5E5] flex items-center px-4 justify-end shrink-0">
+          <div className={cn(
+            "h-16 bg-white border-b border-[#E5E5E5] flex items-center shrink-0",
+            isSidebarOpen ? "px-4 justify-between" : "justify-center"
+          )}>
+            {isSidebarOpen && (
+              <span className="font-bold text-xs tracking-wider text-[#666] uppercase">
+                Menu
+              </span>
+            )}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors text-gray-400 hover:text-indigo-600 focus:outline-none"
+              className="p-1.5 hover:bg-slate-50 rounded-lg transition-colors text-slate-400 hover:text-indigo-600 focus:outline-none"
               title={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
             >
               <Menu className="w-4 h-4" />
@@ -897,7 +905,7 @@ export default function App() {
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group relative",
                   activeTab === tab.id 
-                    ? "bg-indigo-50 text-indigo-700 shadow-sm" 
+                    ? "bg-indigo-50 text-indigo-700 font-semibold shadow-xs border-l-2 border-[#C53F27]" 
                     : "text-[#666] hover:bg-gray-50 hover:text-[#1A1A1A]"
                 )}
                 title={!isSidebarOpen ? tab.label : ""}
@@ -969,23 +977,31 @@ export default function App() {
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden bg-[#FAFAFA] relative">
           {/* Watermark Background */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] z-0 overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.035] z-0 overflow-hidden">
             <img 
-              src="https://lh3.googleusercontent.com/d/1oQr4RoR9ON5vK6U_oIN2hW0HdnpEloO8" 
+              src="https://kanooz.com/wp-content/uploads/2026/05/KANOOZ-LOGO-2026-transparent-color-2048x331.avif" 
               alt="Background Logo" 
-              className="w-1/2 max-w-2xl grayscale"
+              className="w-2/3 max-w-3xl object-contain"
               referrerPolicy="no-referrer"
             />
           </div>
 
           <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-6 shrink-0 z-20 sticky top-0">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2.5">
-                <img src="https://kanooz.com/wp-content/uploads/2026/05/Kanooz-Logo-transparent-png-2048x556.png" alt="Logo" className="h-6 w-auto" referrerPolicy="no-referrer" />
+              <div className="flex items-center gap-3">
+                <img 
+                  src="https://kanooz.com/wp-content/uploads/2026/05/KANOOZ-LOGO-2026-transparent-color-2048x331.avif" 
+                  alt="Kanooz Logo" 
+                  className="h-7 w-auto max-w-[180px] object-contain" 
+                  referrerPolicy="no-referrer" 
+                />
                 <div className="h-6 w-[1px] bg-[#E5E5E5]" />
                 <div>
-                  <h2 className="text-xs font-bold text-indigo-900 leading-tight">Central Planning Portal</h2>
-                  <p className="text-[9px] text-[#888] font-medium uppercase tracking-widest leading-none">{activeTab} View</p>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-xs font-bold text-indigo-950 leading-tight">Central Planning Portal</h2>
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#C53F27]"></span>
+                  </div>
+                  <p className="text-[9px] text-[#888] font-semibold uppercase tracking-wider leading-none mt-0.5">{activeTab} View</p>
                 </div>
               </div>
             </div>

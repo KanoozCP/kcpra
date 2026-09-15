@@ -193,9 +193,9 @@ export default function Dashboard({ manpower, projects, assignments }: Props) {
   const localHireCount = manpower.filter(m => m.employmentType === 'Local Hire').length;
 
   const sponsorshipData = [
-    { name: 'Direct', value: directCount, color: '#4F46E5' },
-    { name: 'Qiwa', value: qiwaCount, color: '#3B82F6' },
-    { name: 'Local Hire', value: localHireCount, color: '#10B981' },
+    { name: 'Direct', value: directCount, color: '#2A337B' },
+    { name: 'Qiwa', value: qiwaCount, color: '#C53F27' },
+    { name: 'Local Hire', value: localHireCount, color: '#0D9488' },
   ].filter(c => c.value > 0);
 
   // E. Talent Quality Rating Distribution
@@ -323,7 +323,7 @@ export default function Dashboard({ manpower, projects, assignments }: Props) {
                     wrapperStyle={{ fontSize: '11px', color: labelColor }} 
                   />
                   <Bar dataKey="Required" name="Staff Requested" fill="#E2E8F0" radius={[4, 4, 0, 0]} barSize={16} />
-                  <Bar dataKey="Assigned" name="Staff Allocated" fill="#4F46E5" radius={[4, 4, 0, 0]} barSize={16} />
+                  <Bar dataKey="Assigned" name="Staff Allocated" fill="#2A337B" radius={[4, 4, 0, 0]} barSize={16} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -374,7 +374,7 @@ export default function Dashboard({ manpower, projects, assignments }: Props) {
                     contentStyle={tooltipStyle}
                     cursor={{ fill: 'rgba(239, 68, 68, 0.02)' }}
                   />
-                  <Bar dataKey="Gap" name="Missing Headcount" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={24} />
+                  <Bar dataKey="Gap" name="Missing Headcount" fill="#C53F27" radius={[4, 4, 0, 0]} barSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -429,7 +429,7 @@ export default function Dashboard({ manpower, projects, assignments }: Props) {
                     iconType="circle"
                     wrapperStyle={{ fontSize: '11px', color: labelColor }} 
                   />
-                  <Bar dataKey="Deployed" name="Assigned & Deployed" fill="#4F46E5" stackId="a" barSize={14} />
+                  <Bar dataKey="Deployed" name="Assigned & Deployed" fill="#2A337B" stackId="a" barSize={14} />
                   <Bar dataKey="IdleBench" name="Available" fill="#10B981" stackId="a" barSize={14} />
                   <Bar dataKey="Vacation" name="On Vacation" fill="#F59E0B" stackId="a" barSize={14} />
                 </BarChart>

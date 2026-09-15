@@ -72,16 +72,19 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="bg-white py-10 px-6 shadow-xl rounded-2xl border border-slate-200/80 sm:px-10"
+          className="bg-white py-10 px-6 shadow-xl rounded-2xl border border-slate-200/80 sm:px-10 relative overflow-hidden"
         >
+          {/* Kanooz Corporate Accent Bar */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-[#2A337B] via-[#2A337B] to-[#C53F27] absolute top-0 left-0" />
+
           {/* Logo Representation */}
           <div className="flex flex-col items-center mb-8">
-            <div className="mb-4 relative">
-              <div className="absolute inset-0 bg-indigo-100 rounded-full blur-md opacity-50 scale-125"></div>
+            <div className="mb-4 relative flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-100/60 to-red-100/50 rounded-full blur-lg opacity-60 scale-125"></div>
               <img 
-                src="https://kanooz.com/wp-content/uploads/2026/05/Kanooz-Logo-transparent-png-2048x556.png" 
+                src="https://kanooz.com/wp-content/uploads/2026/05/KANOOZ-LOGO-2026-transparent-color-2048x331.avif" 
                 alt="Kanooz Logo" 
-                className="h-10 w-auto relative z-10 filter drop-shadow-sm" 
+                className="h-10 sm:h-12 w-auto max-w-[280px] object-contain relative z-10 filter drop-shadow-xs" 
                 referrerPolicy="no-referrer"
                 onError={(e) => {
                   // Fallback to text identifier if logo is unreachable
@@ -90,12 +93,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               />
             </div>
             
-            <h2 className="text-xl font-bold text-slate-950 tracking-tight text-center">
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight text-center">
               Central Planning Portal
             </h2>
-            <p className="mt-1 text-xs text-slate-500 font-medium tracking-wide prose uppercase">
-              Kanooz Industrial Services
-            </p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#C53F27]"></span>
+              <p className="text-[11px] text-slate-500 font-bold tracking-wider uppercase">
+                Kanooz Industrial Services
+              </p>
+            </div>
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
