@@ -172,7 +172,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </div>
             </div>
 
-            <div className="pt-2 space-y-3">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={isLoading}
@@ -190,20 +190,6 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   'Sign In'
                 )}
               </button>
-
-              <div className="flex items-center justify-between text-[11px] text-slate-500 px-0.5">
-                <span>Default: <strong className="text-slate-700">Admin</strong> / <strong className="text-slate-700">Admin</strong></span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsernameInput('Admin');
-                    setPasswordInput('Admin');
-                  }}
-                  className="text-[#2A337B] hover:underline font-semibold cursor-pointer"
-                >
-                  Quick Fill
-                </button>
-              </div>
             </div>
           </form>
 
