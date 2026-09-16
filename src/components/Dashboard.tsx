@@ -20,7 +20,6 @@ import {
 import { 
   Users, 
   Briefcase, 
-  Calendar, 
   AlertTriangle,
   Award,
   CircleDot,
@@ -242,10 +241,6 @@ export default function Dashboard({ manpower, projects, assignments }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-3 self-start sm:self-center shrink-0">
-          <span className="flex items-center gap-1.5 text-xs text-indigo-700 bg-indigo-50 font-bold px-3 py-1.5 rounded-lg border border-indigo-100">
-            <Calendar className="w-3.5 h-3.5" />
-            As of May 21, 2026
-          </span>
           <span className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 font-bold px-3 py-1.5 rounded-lg border border-emerald-100">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Active Sync
